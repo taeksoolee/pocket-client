@@ -6,37 +6,80 @@ import { saveSnapshot } from '../utils/snapshot';
 const request = new Hono();
 
 request.post('/', async (c) => {
-  const body = await c.req.parseBody();
-  const targetUrl = body.url as string;
-  const method = body.method as string;
-
   try {
+    const body = await c.req.parseBody();
+    const rawUrl = body.url as string;
+    const method = body.method as string;
+    const payloadStr = body.pocket_payload as string;
+
+    // 1. 프론트엔드에서 묶어 보낸 Alpine.js 상태 파싱
+    // payload가 없으면 기본 빈 객체로 fallback 처리
+    const payload = payloadStr
+      ? JSON.parse(payloadStr)
+      : { params: [], headers: [], bodyType: 'none', bodyContent: '' };
+
+    // 2. URL 조립 (Query Parameters 붙이기)
+    const urlObj = new URL(rawUrl);
+    payload.params.forEach((p: any) => {
+      // 체크박스가 켜져 있고(active), 키 값이 비어있지 않은 것만 쿼리에 추가
+      if (p.active && p.key.trim() !== '') {
+        urlObj.searchParams.append(p.key.trim(), p.value);
+      }
+    });
+    const finalUrl = urlObj.toString(); // 쿼리스트링이 완벽하게 붙은 최종 URL
+
+    // 3. Request Headers 세팅
+    const fetchHeaders = new Headers();
+    payload.headers.forEach((h: any) => {
+      if (h.active && h.key.trim() !== '') {
+        fetchHeaders.append(h.key.trim(), h.value);
+      }
+    });
+
+    // 4. Request Body 세팅 (GET 요청 등은 Body를 가질 수 없음)
+    let fetchBody: string | undefined = undefined;
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
+      if (payload.bodyType === 'json' && payload.bodyContent.trim() !== '') {
+        fetchBody = payload.bodyContent;
+
+        // 사용자가 명시적으로 Content-Type을 넣지 않았다면 JSON으로 강제 세팅
+        if (!fetchHeaders.has('Content-Type') && !fetchHeaders.has('content-type')) {
+          fetchHeaders.set('Content-Type', 'application/json');
+        }
+      }
+    }
+
+    // 5. 실제 타겟 서버로 API 요청 날리기!
     const startTime = Date.now();
+    const fetchOptions: RequestInit = {
+      method,
+      headers: fetchHeaders,
+      body: fetchBody,
+    };
 
-    // 1. 실제 외부 API 호출
-    const response = await fetch(targetUrl, { method });
+    const response = await fetch(finalUrl, fetchOptions);
+
+    // 응답 데이터 파싱 (JSON인지 Text인지 확인)
     const isJson = response.headers.get('content-type')?.includes('application/json');
-    const data = isJson ? await response.json() : await response.text();
-
+    const responseData = isJson ? await response.json() : await response.text();
     const duration = Date.now() - startTime;
 
-    // 2. utils/snapshot.ts 의 저장 로직 호출 (관심사 분리)
+    // 6. 스냅샷 저장 (최종 조립된 URL을 저장하는 게 디버깅에 좋음)
     const { filename } = saveSnapshot({
-      url: targetUrl,
+      url: finalUrl,
       method,
       status: response.status,
       duration,
-      data,
+      data: responseData,
     });
 
-    // 💡 [핵심] 성공적으로 저장되었다면 사이드바에 신호를 보냄
-    // HTMX는 이 헤더를 읽어서 브라우저에서 'snapshotUpdated' 이벤트를 발생시킵니다.
+    // 7. 사이드바 실시간 갱신 신호 발송
     c.header('HX-Trigger', 'snapshotUpdated');
 
-    // 3. 성공 UI 조각(Partial) 리턴
-    return c.html(<SuccessCard duration={duration} filename={filename} data={data} />);
+    // 8. 성공 UI 카드 렌더링
+    return c.html(<SuccessCard duration={duration} filename={filename} data={responseData} />);
   } catch (err: any) {
-    // 4. 에러 UI 조각 리턴 (에러 시에는 신호를 보내지 않음)
+    // URL 파싱 에러나 네트워크 에러 발생 시 UI 조각 리턴
     return c.html(<ErrorCard message={err.message || String(err)} />);
   }
 });
