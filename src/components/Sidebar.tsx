@@ -7,7 +7,7 @@ export const SidebarList = ({ files }: { files: string[] }) => (
     ) : (
       files.map((file) => (
         <li
-          /* 💡 li에 있던 px-2 py-1 패딩을 제거해서 버튼이 꽉 차게 만듦! */
+          /* 💡 activeFile 상태에 따른 스타일 바인딩 */
           x-bind:class={`activeFile === '${file}' ? 'bg-slate-700 ring-1 ring-slate-600' : 'hover:bg-slate-700'`}
           class="group flex items-center rounded transition-colors animate-in slide-in-from-left-2 duration-200"
         >
@@ -17,7 +17,6 @@ export const SidebarList = ({ files }: { files: string[] }) => (
             hx-target="#result"
             x-on:click={`activeFile = '${file}'`}
             x-bind:class={`activeFile === '${file}' ? 'text-indigo-300 font-bold' : 'text-slate-300 hover:text-indigo-300'`}
-            /* 💡 패딩(px-3 py-2)을 버튼으로 옮겨서 클릭 영역(Hitbox)을 최대한 넓힘 */
             class="flex-1 text-left px-3 py-2 text-[11px] font-mono truncate outline-none"
             title={file}
           >
@@ -29,7 +28,6 @@ export const SidebarList = ({ files }: { files: string[] }) => (
             hx-delete={`/snapshots/${file}`}
             hx-confirm={`'${file}' 스냅샷을 삭제하시겠습니까?`}
             hx-target="#result"
-            /* 💡 우측 여백을 위해 삭제 버튼에도 적절히 패딩과 마진 부여 */
             class="opacity-0 group-hover:opacity-100 p-2 mr-1 text-slate-500 hover:text-red-400 transition-all hover:scale-110"
             title="삭제"
           >
@@ -60,13 +58,25 @@ export const SidebarList = ({ files }: { files: string[] }) => (
 export const Sidebar = ({ files }: { files: string[] }) => (
   <aside
     class="w-64 bg-slate-800 text-slate-300 h-screen overflow-y-auto flex-shrink-0 flex flex-col border-r border-slate-700"
-    /* 최상단 상태 선언 */
-    x-data="{ activeFile: '' }"
+    /* 💡 최상단 상태 및 바인딩 객체 선언 */
+    x-data={`{ 
+      activeFile: '',
+      get sidebarEvents() {
+        return {
+          ['x-on:snapshot-updated.window']($event) {
+            if($event.detail.filename) this.activeFile = $event.detail.filename;
+          }
+        }
+      }
+    }`}
+    /* 💡 바인드 객체 적용 */
+    x-bind="sidebarEvents"
   >
     <div class="p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
       <h2 class="text-sm font-bold text-slate-100 uppercase tracking-wider">📁 Snapshots</h2>
     </div>
-    <div class="p-2 flex-1" hx-get="/sidebar" hx-trigger="snapshotUpdated from:body">
+
+    <div class="p-2 flex-1" hx-get="/sidebar" hx-trigger="snapshot-updated from:body">
       <SidebarList files={files} />
     </div>
   </aside>

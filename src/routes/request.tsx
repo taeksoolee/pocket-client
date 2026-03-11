@@ -89,7 +89,11 @@ request.post('/', async (c) => {
     };
 
     const { filename } = saveSnapshot({ request: requestData, response: responseDataObj });
-    c.header('HX-Trigger', 'snapshotUpdated');
+
+    // 💡 수정: 단순히 신호만 보내는 게 아니라, 생성된 파일명을 객체에 담아 이벤트로 발생시킴
+    // HTMX의 HX-Trigger는 JSON 형식을 지원하며, 이는 브라우저의 CustomEvent 디테일로 전달됨
+    c.header('HX-Trigger', JSON.stringify({ 'snapshot-updated': { filename } }));
+
     return c.html(
       <SuccessCard filename={filename} request={requestData} response={responseDataObj} />,
     );
