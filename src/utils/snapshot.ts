@@ -27,8 +27,20 @@ export function saveSnapshot(params: SnapshotParams) {
   if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
 
   const timestamp = new Date();
+
+  // 💡 날짜 포맷을 YYMMDDHHmmss 로 변경
+  const y = timestamp.getFullYear().toString().slice(-2);
+  const m = (timestamp.getMonth() + 1).toString().padStart(2, '0');
+  const d = timestamp.getDate().toString().padStart(2, '0');
+  const hh = timestamp.getHours().toString().padStart(2, '0');
+  const mm = timestamp.getMinutes().toString().padStart(2, '0');
+  const ss = timestamp.getSeconds().toString().padStart(2, '0');
+  const formattedDate = `${y}${m}${d}${hh}${mm}${ss}`;
+
   const safeUrl = params.request.url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
-  const filename = `${timestamp.toISOString().replace(/[:.]/g, '-')}_${params.request.method}_${safeUrl}.json`;
+
+  // 💡 파일명 조립: YYMMDDHHmmss_METHOD_URL.json
+  const filename = `${formattedDate}_${params.request.method}_${safeUrl}.json`;
   const filePath = path.join(resultsDir, filename);
 
   const snapshot = {
