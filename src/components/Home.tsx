@@ -15,6 +15,9 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
     initialHeaders.push({ key: '', value: '', active: true });
   }
 
+  // 💡 중복 제거 로직: config의 엔드포인트와 suggestions를 합친 후 중복 제거
+  const uniqueSuggestions = [...new Set([...(config.commonEndpoints || []), ...suggestions])];
+
   return (
     <Layout>
       <Sidebar files={files} />
@@ -40,7 +43,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 method: 'GET',
                 url: '',
                 baseUrl: '${config.baseUrl || ''}',
-                allSuggestions: ${JSON.stringify([...(config.commonEndpoints || []), ...suggestions])},
+                allSuggestions: ${JSON.stringify(uniqueSuggestions)},
                 showSuggestions: false,
 
                 // 💡 폼 제어 및 반응형 로직
