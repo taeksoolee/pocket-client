@@ -8,10 +8,26 @@ export const Layout = ({ children }: { children: any }) => (
       <title>PocketClient Workspace</title>
       <script dangerouslySetInnerHTML={{ __html: HTMX_LIB }}></script>
       <script defer dangerouslySetInnerHTML={{ __html: ALPINE_LIB }}></script>
-      {/* 💡 CDN 대신 빌드된 CSS를 직접 주입! 오프라인 완벽 대응 */}
       <style dangerouslySetInnerHTML={{ __html: TAILWIND_CSS }}></style>
+      <style>{`
+        /* 전역 리사이징 커서 강제 */
+        .resizing * { cursor: col-resize !important; }
+        .select-none { user-select: none !important; }
+        
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        
+        /* 애니메이션 */
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #475569 transparent; }
+      `}</style>
     </head>
-    <body class="bg-slate-50 text-slate-900 font-sans h-screen flex overflow-hidden">
+    <body
+      class="bg-slate-50 text-slate-900 font-sans h-screen flex overflow-hidden"
+      /* 💡 드래그 중에는 body 전체에 select-none을 걸 수 있도록 클래스 바인딩 (선택사항) */
+    >
       {children}
     </body>
   </html>
