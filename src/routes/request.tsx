@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 
 import { ErrorCard, SuccessCard } from '../components/partials/ResultCard';
-import { config } from '../config'; // 💡 설정 임포트
+import { config } from '../config';
 import { saveSnapshot } from '../utils/snapshot';
 
 const request = new Hono();
@@ -9,32 +9,34 @@ const request = new Hono();
 request.post('/', async (c) => {
   try {
     const body = await c.req.parseBody();
-    const rawUrl = body.url as string;
+    let rawUrl = body.url as string;
     const method = body.method as string;
     const payloadStr = body.pocket_payload as string;
+
+    // 💡 URL 결합: '/'로 시작하면 baseUrl 자동 병합
+    if (rawUrl.startsWith('/') && config.baseUrl) {
+      const base = config.baseUrl.replace(/\/+$/, '');
+      const path = rawUrl.replace(/^\/+/, '');
+      rawUrl = `${base}/${path}`;
+    }
 
     const payload = payloadStr
       ? JSON.parse(payloadStr)
       : { params: [], headers: [], bodyType: 'none', bodyContent: '' };
-
-    // 1. URL 조립
     const urlObj = new URL(rawUrl);
     payload.params.forEach((p: any) => {
       if (p.active && p.key.trim() !== '') urlObj.searchParams.append(p.key.trim(), p.value);
     });
     const finalUrl = urlObj.toString();
 
-    // 💡 2. Request Headers 조립 (설정 파일의 전역 헤더 포함)
     const fetchHeaders = new Headers();
     const reqHeadersObj: Record<string, string> = {};
 
-    // 2-1. 먼저 설정 파일의 전역 헤더 주입
-    Object.entries(config.globalHeaders).forEach(([key, value]) => {
-      fetchHeaders.set(key, value);
-      reqHeadersObj[key] = value;
+    // 전역 헤더 -> 사용자 입력 헤더 순서로 병합
+    Object.entries(config.globalHeaders).forEach(([k, v]) => {
+      fetchHeaders.set(k, v);
+      reqHeadersObj[k] = v;
     });
-
-    // 2-2. 사용자가 입력한 헤더 주입 (전역 헤더를 덮어씀)
     payload.headers.forEach((h: any) => {
       if (h.active && h.key.trim() !== '') {
         fetchHeaders.set(h.key.trim(), h.value);
@@ -42,26 +44,20 @@ request.post('/', async (c) => {
       }
     });
 
-    // 3. Body 처리
     let fetchBody: string | undefined = undefined;
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
-      if (payload.bodyType === 'json' && payload.bodyContent.trim() !== '') {
-        fetchBody = payload.bodyContent;
-        if (!fetchHeaders.has('Content-Type')) {
-          fetchHeaders.set('Content-Type', 'application/json');
-          reqHeadersObj['Content-Type'] = 'application/json';
-        }
-      }
+    if (
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase()) &&
+      payload.bodyType === 'json'
+    ) {
+      fetchBody = payload.bodyContent;
+      if (!fetchHeaders.has('Content-Type')) fetchHeaders.set('Content-Type', 'application/json');
     }
 
-    // 4. 요청 실행
     const startTime = Date.now();
     const response = await fetch(finalUrl, { method, headers: fetchHeaders, body: fetchBody });
-
-    // 5. 응답 분석 및 저장
     const resHeadersObj: Record<string, string> = {};
-    response.headers.forEach((value, key) => {
-      resHeadersObj[key] = value;
+    response.headers.forEach((v, k) => {
+      resHeadersObj[k] = v;
     });
 
     const isJson = response.headers.get('content-type')?.includes('application/json');
@@ -77,7 +73,6 @@ request.post('/', async (c) => {
     };
 
     const { filename } = saveSnapshot({ request: requestData, response: responseDataObj });
-
     c.header('HX-Trigger', 'snapshotUpdated');
     return c.html(
       <SuccessCard filename={filename} request={requestData} response={responseDataObj} />,

@@ -1,94 +1,129 @@
+import { config } from '../config';
 import { Layout } from './Layout';
 import { Sidebar } from './Sidebar';
 
-export const Home = ({ files }: { files: string[] }) => (
+export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions?: string[] }) => (
   <Layout>
-    {/* 좌측 사이드바 */}
     <Sidebar files={files} />
-
-    {/* 우측 메인 영역 */}
-    <main class="flex-1 h-screen overflow-y-auto p-8 bg-slate-50">
+    <main class="flex-1 h-screen overflow-y-auto p-8 bg-slate-50 text-slate-800">
       <div class="max-w-4xl mx-auto">
         <header class="mb-8">
           <h1 class="text-3xl font-bold text-indigo-600">Pocket Client 🚀</h1>
-          <p class="text-slate-500">Embedded Local-first Http Client Tool</p>
+          <p class="text-slate-500 font-medium">Embedded Local-first Http Client Tool</p>
         </header>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
-          {/* 💡 Alpine.js 거대 상태 관리 (x-data) 선언 */}
           <form
             hx-post="/request"
             hx-target="#result"
             hx-disabled-elt="button"
             class="space-y-4"
-            x-data="{
+            x-data={`{
               activeTab: 'params',
               params: [{ key: '', value: '', active: true }],
               headers: [{ key: '', value: '', active: true }],
               bodyType: 'none',
               bodyContent: '',
+              url: '',
+              baseUrl: '${config.baseUrl || ''}',
+              allSuggestions: ${JSON.stringify([...(config.commonEndpoints || []), ...suggestions])},
+              showSuggestions: false,
+
+              // 💡 선언적 바인딩 객체
+              get suggestionContainer() { return { ['x-on:click.outside']() { this.showSuggestions = false } } },
+              get urlInput() {
+                return {
+                  ['x-on:focus']() { this.showSuggestions = true },
+                  ['x-on:input']() { this.showSuggestions = true },
+                  ['x-on:keydown.escape']() { this.showSuggestions = false }
+                }
+              },
+              get filteredSuggestions() {
+                if (!this.url.startsWith('/')) return [];
+                const s = this.url.toLowerCase();
+                return this.allSuggestions.filter(item => item.toLowerCase().includes(s) && item !== this.url).slice(0, 10);
+              },
+              get resolvedUrl() {
+                if (this.url.startsWith('http')) return this.url;
+                return this.baseUrl.replace(/\\/+$/, '') + '/' + this.url.replace(/^\\/+/, '');
+              },
+
               addRow(type) { this[type].push({ key: '', value: '', active: true }) },
               removeRow(type, index) { this[type].splice(index, 1) }
-            }"
+            }`}
           >
-            {/* 1. Method & URL 입력 바 */}
-            <div class="flex gap-4">
-              <select
-                name="method"
-                class="border border-slate-300 rounded-lg px-4 py-2 bg-slate-50 font-bold text-slate-700 outline-none focus:border-indigo-500"
+            <div class="space-y-2">
+              <div class="flex gap-4">
+                <select
+                  name="method"
+                  class="border border-slate-300 rounded-lg px-4 py-2 bg-slate-50 font-bold outline-none focus:border-indigo-500"
+                >
+                  {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((m) => (
+                    <option value={m}>{m}</option>
+                  ))}
+                </select>
+
+                <div class="flex-1 relative" x-bind="suggestionContainer">
+                  <input
+                    type="text"
+                    name="url"
+                    x-model="url"
+                    x-bind="urlInput"
+                    required
+                    autocomplete="off"
+                    class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm"
+                    placeholder={
+                      config.baseUrl ? '/api/v1 (baseUrl 설정됨)' : 'https://api.example.com'
+                    }
+                  />
+
+                  <div
+                    x-show="showSuggestions && filteredSuggestions.length > 0"
+                    class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+                    style="display: none;"
+                  >
+                    <template x-for="s in filteredSuggestions">
+                      <div
+                        x-on:click="url = s; showSuggestions = false"
+                        class="px-4 py-2 hover:bg-indigo-50 cursor-pointer font-mono text-xs text-slate-600 border-b border-slate-50 last:border-0 transition-colors"
+                      >
+                        <span class="text-indigo-500 font-bold">↳</span> <span x-text="s"></span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition active:scale-95"
+                >
+                  Send
+                </button>
+              </div>
+              <div
+                x-show="url.startsWith('/') && baseUrl"
+                class="text-[10px] font-mono text-slate-400 pl-32 truncate italic"
+                style="display: none;"
               >
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="PATCH">PATCH</option>
-                <option value="DELETE">DELETE</option>
-              </select>
-              <input
-                type="url"
-                name="url"
-                required
-                class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono"
-                placeholder="https://api.example.com/v1/users"
-              />
-              <button
-                type="submit"
-                class="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-              >
-                Send
-              </button>
+                <span class="text-indigo-500 not-italic font-black">🎯 Target:</span>{' '}
+                <span x-text="resolvedUrl"></span>
+              </div>
             </div>
 
-            {/* 2. 탭 네비게이션 */}
             <div class="flex border-b border-slate-200 text-sm font-medium mt-6">
-              <button
-                type="button"
-                x-on:click="activeTab = 'params'"
-                x-bind:class="activeTab === 'params' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-800'"
-                class="px-5 py-2 transition-colors"
-              >
-                Params
-              </button>
-              <button
-                type="button"
-                x-on:click="activeTab = 'headers'"
-                x-bind:class="activeTab === 'headers' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-800'"
-                class="px-5 py-2 transition-colors"
-              >
-                Headers
-              </button>
-              <button
-                type="button"
-                x-on:click="activeTab = 'body'"
-                x-bind:class="activeTab === 'body' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-800'"
-                class="px-5 py-2 transition-colors"
-              >
-                Body
-              </button>
+              {['params', 'headers', 'body'].map((tab) => (
+                <button
+                  type="button"
+                  x-on:click={`activeTab = '${tab}'`}
+                  x-bind:class={`activeTab === '${tab}' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-800'`}
+                  class="px-5 py-2 capitalize transition-all"
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
-            {/* 3. 탭 컨텐츠 영역 */}
             <div class="bg-slate-50/50 p-4 rounded-b-lg border-x border-b border-slate-200 min-h-[150px]">
-              {/* 🎯 Params 탭 */}
+              {/* 🎯 Params */}
               <div x-show="activeTab === 'params'" class="space-y-2">
                 <template x-for="(item, index) in params" x-bind:key="index">
                   <div class="flex gap-2 items-center">
@@ -101,13 +136,13 @@ export const Home = ({ files }: { files: string[] }) => (
                       type="text"
                       x-model="item.key"
                       placeholder="Key"
-                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm focus:border-indigo-500 outline-none"
+                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm outline-none focus:border-indigo-500"
                     />
                     <input
                       type="text"
                       x-model="item.value"
                       placeholder="Value"
-                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm focus:border-indigo-500 outline-none"
+                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm outline-none focus:border-indigo-500"
                     />
                     <button
                       type="button"
@@ -130,13 +165,13 @@ export const Home = ({ files }: { files: string[] }) => (
                 <button
                   type="button"
                   x-on:click="addRow('params')"
-                  class="text-sm text-indigo-600 font-medium hover:text-indigo-800 mt-2 flex items-center gap-1"
+                  class="text-xs text-indigo-600 font-bold hover:underline mt-2"
                 >
                   + Add Parameter
                 </button>
               </div>
 
-              {/* 🎯 Headers 탭 */}
+              {/* 🎯 Headers */}
               <div x-show="activeTab === 'headers'" class="space-y-2" style="display: none;">
                 <template x-for="(item, index) in headers" x-bind:key="index">
                   <div class="flex gap-2 items-center">
@@ -148,14 +183,14 @@ export const Home = ({ files }: { files: string[] }) => (
                     <input
                       type="text"
                       x-model="item.key"
-                      placeholder="Authorization"
-                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm focus:border-indigo-500 outline-none"
+                      placeholder="Header"
+                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm outline-none focus:border-indigo-500"
                     />
                     <input
                       type="text"
                       x-model="item.value"
-                      placeholder="Bearer token..."
-                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm focus:border-indigo-500 outline-none"
+                      placeholder="Value"
+                      class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm outline-none focus:border-indigo-500"
                     />
                     <button
                       type="button"
@@ -178,39 +213,33 @@ export const Home = ({ files }: { files: string[] }) => (
                 <button
                   type="button"
                   x-on:click="addRow('headers')"
-                  class="text-sm text-indigo-600 font-medium hover:text-indigo-800 mt-2 flex items-center gap-1"
+                  class="text-xs text-indigo-600 font-bold hover:underline mt-2"
                 >
                   + Add Header
                 </button>
               </div>
 
-              {/* 🎯 Body 탭 */}
+              {/* 🎯 Body */}
               <div x-show="activeTab === 'body'" style="display: none;">
-                <div class="flex gap-4 mb-3 text-sm">
+                <div class="flex gap-4 mb-3 text-xs font-bold text-slate-500 uppercase">
                   <label class="flex items-center gap-1 cursor-pointer">
-                    <input type="radio" x-model="bodyType" value="none" class="text-indigo-600" />{' '}
-                    None
+                    <input type="radio" x-model="bodyType" value="none" /> None
                   </label>
                   <label class="flex items-center gap-1 cursor-pointer">
-                    <input type="radio" x-model="bodyType" value="json" class="text-indigo-600" />{' '}
-                    JSON
+                    <input type="radio" x-model="bodyType" value="json" /> JSON
                   </label>
                 </div>
                 <div x-show="bodyType === 'json'">
                   <textarea
                     x-model="bodyContent"
-                    class="w-full border border-slate-300 rounded-lg p-3 font-mono text-sm outline-none focus:border-indigo-500 bg-white"
-                    rows={5}
-                    placeholder='{\n  "key": "value"\n}'
+                    class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:border-indigo-500 bg-white"
+                    rows={6}
+                    placeholder='{\n  "hello": "world"\n}'
                   ></textarea>
-                </div>
-                <div x-show="bodyType === 'none'" class="text-slate-400 text-sm italic py-4">
-                  This request does not have a body.
                 </div>
               </div>
             </div>
 
-            {/* 💡 Step 2: Hono 서버로 Alpine 상태를 보내기 위한 Hidden Input */}
             <input
               type="hidden"
               name="pocket_payload"
@@ -218,13 +247,7 @@ export const Home = ({ files }: { files: string[] }) => (
             />
           </form>
         </div>
-
-        {/* 결과 표시 영역 */}
-        <div id="result">
-          <div class="text-center text-slate-400 py-10 border-2 border-dashed border-slate-200 rounded-xl">
-            🚀 URL을 입력하고 Send를 눌러보세요.
-          </div>
-        </div>
+        <div id="result"></div>
       </div>
     </main>
   </Layout>
