@@ -1,5 +1,5 @@
-import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
 
 import { workspaceDir } from '../config.js';
 
@@ -60,5 +60,17 @@ export function getSnapshots(): string[] {
   } catch (e) {
     // results 폴더가 아직 없거나 읽기 에러 시 빈 배열 반환
     return [];
+  }
+}
+
+export function getSnapshot(filename: string) {
+  const safeName = basename(filename); // 경로 조작 방지
+  const filePath = join(workspaceDir, 'results', safeName);
+
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+    return JSON.parse(content);
+  } catch (e) {
+    return null;
   }
 }
