@@ -3,19 +3,16 @@ import { Layout } from './Layout';
 import { Sidebar } from './Sidebar';
 
 export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions?: string[] }) => {
-  // 💡 config의 전역 헤더를 Alpine.js가 관리할 수 있는 배열 형태로 변환
   const initialHeaders = Object.entries(config.globalHeaders).map(([key, value]) => ({
     key,
     value,
     active: true,
   }));
 
-  // 기본 헤더가 없으면 빈 줄 하나 추가
   if (initialHeaders.length === 0) {
     initialHeaders.push({ key: '', value: '', active: true });
   }
 
-  // 💡 중복 제거 로직: config의 엔드포인트와 suggestions를 합친 후 중복 제거
   const uniqueSuggestions = [...new Set([...(config.commonEndpoints || []), ...suggestions])];
 
   return (
@@ -45,15 +42,21 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 baseUrl: '${config.baseUrl || ''}',
                 allSuggestions: ${JSON.stringify(uniqueSuggestions)},
                 showSuggestions: false,
+                selectedIndex: -1,
 
-                // 💡 폼 제어 및 반응형 로직
                 get formControl() {
                   return {
                     ['x-init']() {
-                      // 💡 GET으로 변경 시 Body 탭에 있었다면 Params로 자동 이동
                       this.$watch('method', (val) => {
                         if (val === 'GET' && this.activeTab === 'body') {
                           this.activeTab = 'params';
+                        }
+                      });
+                      this.$watch('url', () => {
+                        this.selectedIndex = -1;
+                        // url이 바뀌면 스크롤 맨 위로 초기화
+                        if (this.$refs.suggestionBox) {
+                           this.$refs.suggestionBox.scrollTop = 0;
                         }
                       });
                     },
@@ -61,13 +64,11 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                       const data = $event.detail;
                       this.method = data.method;
                       
-                      // 💡 디코딩 로직 추가
                       const decodedBody = decodeURIComponent(data.body || '');
                       this.bodyContent = decodedBody;
                       this.bodyType = decodedBody ? 'json' : 'none';
 
                       try {
-                        // 💡 URL 디코딩 로직 추가
                         const decodedUrl = decodeURIComponent(data.url);
                         const urlObj = new URL(decodedUrl);
                         
@@ -93,14 +94,58 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                   }
                 },
 
-                get suggestionContainer() { return { ['x-on:click.outside']() { this.showSuggestions = false } } },
+                get suggestionContainer() { 
+                  return { 
+                    ['x-on:click.outside']() { 
+                      this.showSuggestions = false; 
+                      this.selectedIndex = -1;
+                    } 
+                  } 
+                },
+
+                // 💡 스크롤 추적 로직 추가
+                scrollToSelected() {
+                  this.$nextTick(() => {
+                    const box = this.$refs.suggestionBox;
+                    if (!box) return;
+                    
+                    const activeEl = box.querySelector('[data-active="true"]');
+                    if (activeEl) {
+                      // block: 'nearest'를 사용하여 화면 밖으로 나갔을 때만 최소한으로 스크롤 이동
+                      activeEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                    }
+                  });
+                },
+
                 get urlInput() {
                   return {
                     ['x-on:focus']() { this.showSuggestions = true },
                     ['x-on:input']() { this.showSuggestions = true },
-                    ['x-on:keydown.escape']() { this.showSuggestions = false }
+                    ['x-on:keydown.escape']() { 
+                      this.showSuggestions = false; 
+                      this.selectedIndex = -1; 
+                    },
+                    ['x-on:keydown.down.prevent']() {
+                      if (!this.showSuggestions) return;
+                      this.selectedIndex = (this.selectedIndex + 1) % this.filteredSuggestions.length;
+                      this.scrollToSelected(); // 💡 선택 후 스크롤 추적 호출
+                    },
+                    ['x-on:keydown.up.prevent']() {
+                      if (!this.showSuggestions) return;
+                      this.selectedIndex = (this.selectedIndex - 1 + this.filteredSuggestions.length) % this.filteredSuggestions.length;
+                      this.scrollToSelected(); // 💡 선택 후 스크롤 추적 호출
+                    },
+                    ['x-on:keydown.enter']($event) {
+                      if (this.showSuggestions && this.selectedIndex !== -1) {
+                        $event.preventDefault();
+                        this.url = this.filteredSuggestions[this.selectedIndex];
+                        this.showSuggestions = false;
+                        this.selectedIndex = -1;
+                      }
+                    }
                   }
                 },
+
                 get filteredSuggestions() {
                   if (!this.url.startsWith('/')) return [];
                   const s = this.url.toLowerCase();
@@ -153,16 +198,28 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                     />
 
                     <div
+                      /* 💡 ref 추가: 스크롤 영역을 자바스크립트에서 쉽게 참조하기 위함 */
+                      x-ref="suggestionBox"
                       x-show="showSuggestions && filteredSuggestions.length > 0"
                       class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto"
                       style="display: none;"
                     >
-                      <template x-for="s in filteredSuggestions">
+                      <template x-for="(s, index) in filteredSuggestions">
                         <div
-                          x-on:click="url = s; showSuggestions = false"
-                          class="px-4 py-2 hover:bg-indigo-50 cursor-pointer font-mono text-xs text-slate-600 border-b border-slate-50 last:border-0 transition-colors"
+                          x-on:click="url = s; showSuggestions = false; selectedIndex = -1"
+                          x-on:mouseenter="selectedIndex = index"
+                          /* 💡 data-active 속성 추가: scrollIntoView에서 이 속성을 찾아 스크롤 이동 */
+                          x-bind:data-active="selectedIndex === index"
+                          x-bind:class="selectedIndex === index ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'"
+                          class="px-4 py-2 cursor-pointer font-mono text-xs border-b border-slate-50 last:border-0 transition-colors"
                         >
-                          <span class="text-indigo-500 font-bold">↳</span> <span x-text="s"></span>
+                          <span
+                            x-bind:class="selectedIndex === index ? 'text-indigo-600' : 'text-indigo-400'"
+                            class="font-bold"
+                          >
+                            ↳
+                          </span>{' '}
+                          <span x-text="s"></span>
                         </div>
                       </template>
                     </div>
