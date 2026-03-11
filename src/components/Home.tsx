@@ -57,15 +57,21 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                     ['x-on:fill-request-form.window']($event) {
                       const data = $event.detail;
                       this.method = data.method;
-                      this.bodyContent = data.body || '';
-                      this.bodyType = data.body ? 'json' : 'none';
+                      
+                      // 💡 디코딩 로직 추가
+                      const decodedBody = decodeURIComponent(data.body || '');
+                      this.bodyContent = decodedBody;
+                      this.bodyType = decodedBody ? 'json' : 'none';
 
                       try {
-                        const urlObj = new URL(data.url);
-                        if (this.baseUrl && data.url.startsWith(this.baseUrl)) {
+                        // 💡 URL 디코딩 로직 추가
+                        const decodedUrl = decodeURIComponent(data.url);
+                        const urlObj = new URL(decodedUrl);
+                        
+                        if (this.baseUrl && decodedUrl.startsWith(this.baseUrl)) {
                           this.url = urlObj.pathname;
                         } else {
-                          this.url = data.url.split('?')[0];
+                          this.url = decodedUrl.split('?')[0];
                         }
                         
                         const searchParams = Array.from(urlObj.searchParams.entries());
@@ -73,7 +79,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                           ? searchParams.map(([key, value]) => ({ key, value, active: true }))
                           : [{ key: '', value: '', active: true }];
                       } catch(e) {
-                        this.url = data.url;
+                        this.url = decodeURIComponent(data.url);
                       }
 
                       const headerEntries = Object.entries(data.headers || {});
@@ -180,7 +186,6 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 {['params', 'headers', 'body'].map((tab) => (
                   <button
                     type="button"
-                    /* 💡 GET일 때는 body 탭을 아예 렌더링하지 않거나 숨김 */
                     x-show={`'${tab}' !== 'body' || method !== 'GET'`}
                     x-on:click={`activeTab = '${tab}'`}
                     x-bind:class={`activeTab === '${tab}' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-800'`}
@@ -286,7 +291,6 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                   </button>
                 </div>
 
-                {/* 💡 컨텐츠 영역도 GET일 때는 activeTab이 body여도 노출되지 않도록 이중 잠금 */}
                 <div x-show="activeTab === 'body' && method !== 'GET'" style="display: none;">
                   <div class="flex gap-4 mb-3 text-xs font-bold text-slate-500 uppercase">
                     <label class="flex items-center gap-1 cursor-pointer">

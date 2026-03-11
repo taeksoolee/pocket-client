@@ -39,16 +39,15 @@ snapshots.get('/:filename', (c) => {
     formattedTimestamp = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
   }
 
-  // 💡 핵심: 폼을 채우기 위한 이벤트를 발생시킴.
-  // 요청 데이터를 그대로 'fill-request-form' 이벤트에 담아서 보냄.
+  // 💡 핵심 수정: HTTP 헤더 에러 방지를 위해 url과 body를 encodeURIComponent로 감싸서 보냄
   c.header(
     'HX-Trigger',
     JSON.stringify({
       'fill-request-form': {
         method: requestData.method,
-        url: requestData.url,
+        url: encodeURIComponent(requestData.url), // 인코딩 추가
         headers: requestData.headers,
-        body: requestData.body,
+        body: encodeURIComponent(requestData.body || ''), // 인코딩 추가
       },
     }),
   );

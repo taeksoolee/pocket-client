@@ -99,8 +99,11 @@ request.post('/', async (c) => {
 
     const { filename } = saveSnapshot({ request: requestData, response: responseDataObj });
 
-    // 💡 수정: 단순히 신호만 보내는 게 아니라, 생성된 파일명을 객체에 담아 이벤트로 발생시킴
-    c.header('HX-Trigger', JSON.stringify({ 'snapshot-updated': { filename } }));
+    // 💡 수정: 한글 파일명이 포함된 경우 HTTP Header 에러가 발생하므로 filename을 인코딩해서 전송
+    c.header(
+      'HX-Trigger',
+      JSON.stringify({ 'snapshot-updated': { filename: encodeURIComponent(filename) } }),
+    );
 
     return c.html(
       <SuccessCard

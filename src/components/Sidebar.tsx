@@ -64,7 +64,8 @@ export const Sidebar = ({ files }: { files: string[] }) => (
       get sidebarEvents() {
         return {
           ['x-on:snapshot-updated.window']($event) {
-            if($event.detail.filename) this.activeFile = $event.detail.filename;
+            // 💡 수정: 헤더를 통해 인코딩되어 넘어온 파일명을 디코딩하여 상태 업데이트
+            if($event.detail.filename) this.activeFile = decodeURIComponent($event.detail.filename);
           }
         }
       }
