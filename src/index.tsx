@@ -51,15 +51,15 @@ app.get('/', (c) => {
               <option value="PUT">PUT</option>
               <option value="DELETE">DELETE</option>
             </select>
-            <input 
-              type="url" 
-              name="url" 
+            <input
+              type="url"
+              name="url"
               required
-              class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" 
-              placeholder="https://jsonplaceholder.typicode.com/todos/1" 
+              class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="https://jsonplaceholder.typicode.com/todos/1"
             />
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               class="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
             >
               Send
@@ -85,18 +85,18 @@ app.post('/request', async (c) => {
 
   try {
     const startTime = Date.now();
-    
+
     // 실제 외부 API 호출
     const response = await fetch(targetUrl, { method });
     const isJson = response.headers.get('content-type')?.includes('application/json');
     const data = isJson ? await response.json() : await response.text();
-    
+
     const duration = Date.now() - startTime;
 
     // 💡 변경점: 무조건 루트가 아니라, 현재 파일(server.mjs)이 있는 폴더 기준 내부에 results 생성
     const resultDir = join(__dirname, 'results');
     mkdirSync(resultDir, { recursive: true });
-    
+
     // 파일명 생성 로직
     const urlObj = new URL(targetUrl);
     const safeDomain = urlObj.hostname.replace(/[^a-z0-9]/gi, '_');
@@ -105,8 +105,14 @@ app.post('/request', async (c) => {
 
     // 스냅샷 데이터 구조
     const snapshot = {
-      meta: { url: targetUrl, method, status: response.status, duration_ms: duration, timestamp: new Date().toISOString() },
-      data: data
+      meta: {
+        url: targetUrl,
+        method,
+        status: response.status,
+        duration_ms: duration,
+        timestamp: new Date().toISOString(),
+      },
+      data: data,
     };
     writeFileSync(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
 
@@ -118,12 +124,13 @@ app.post('/request', async (c) => {
         </div>
         <div class="p-4 bg-slate-800 text-slate-300 font-mono text-sm overflow-x-auto">
           {/* 사용자에게 파일이 어디에 저장됐는지 명확히 보여줌 */}
-          <div class="mb-2 text-slate-400">📄 Saved at: ./{basename(__dirname)}/results/{filename}</div>
+          <div class="mb-2 text-slate-400">
+            📄 Saved at: ./{basename(__dirname)}/results/{filename}
+          </div>
           <pre>{JSON.stringify(data, null, 2)}</pre>
         </div>
       </div>
     );
-
   } catch (err: any) {
     return c.html(
       <div class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">

@@ -4,6 +4,9 @@
   "description": "Embedded API Workspace for Real Engineers.",
   "type": "module",
   "scripts": {
+    "lint": "eslint src/**/*.{ts,tsx}",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "build": "node build.js",
     "start": "node dist/server.mjs",
     "dev": "node dev.js"
@@ -16,6 +19,10 @@
     "@types/node": "^25.4.0",
     "alpinejs": "^3.14.0",
     "esbuild": "^0.24.0",
-    "htmx.org": "^2.0.4"
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "htmx.org": "^2.0.4",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.57.0"
   }
 }
