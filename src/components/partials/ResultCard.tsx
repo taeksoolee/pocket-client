@@ -21,7 +21,6 @@ export const SuccessCard = ({
   response: SnapshotResponse;
   timestamp?: string;
 }) => {
-  // 💡 수정: 데이터가 객체일 때만 stringify 하고, 문자열이면 그대로 노출하여 불필요한 "" 제거
   const dataString =
     typeof response.data === 'object' && response.data !== null
       ? JSON.stringify(response.data, null, 2)
@@ -48,7 +47,7 @@ export const SuccessCard = ({
         }
       }"
     >
-      {/* 상단 헤더 */}
+      {/* 1. 상단 헤더 (Copy 버튼 제거되어 깔끔해짐) */}
       <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
           <span
@@ -64,20 +63,9 @@ export const SuccessCard = ({
             <span class="flex items-center gap-1">📦 {sizeKb} KB</span>
           </div>
         </div>
-
-        {filename && (
-          <button
-            type="button"
-            x-on:click="copy('res-json')"
-            x-bind:class="copied ? 'text-green-600 bg-green-50 border-green-200' : 'text-slate-600 hover:bg-slate-50 border-slate-200'"
-            class="text-xs flex items-center gap-1 bg-white px-3 py-1.5 border rounded-lg transition shadow-sm active:scale-95"
-          >
-            <span x-text="copied ? '✅ Copied!' : '📋 Copy Response'">📋 Copy Response</span>
-          </button>
-        )}
       </div>
 
-      {/* URL 및 요청시간 라인 */}
+      {/* 2. URL 및 요청시간 라인 */}
       <div class="px-4 py-2 bg-white border-b border-slate-100 text-[11px] font-mono text-slate-500 flex justify-between items-center gap-4">
         <div class="truncate" title={request.url}>
           🌐 {request.url}
@@ -90,7 +78,7 @@ export const SuccessCard = ({
         )}
       </div>
 
-      {/* 탭 네비게이션 */}
+      {/* 3. 탭 네비게이션 */}
       <div class="flex border-b border-slate-200 text-xs font-medium bg-slate-50/50 overflow-x-auto">
         {['res-body', 'res-headers', 'req-headers', 'req-body'].map((tab) => (
           <button
@@ -104,43 +92,63 @@ export const SuccessCard = ({
         ))}
       </div>
 
-      {/* 컨텐츠 영역 */}
-      <div class="p-4 bg-slate-900 text-slate-300 font-mono text-sm overflow-auto max-h-[600px] flex-1">
-        <div x-show="activeTab === 'res-body'">
-          <pre id="res-json" class="leading-relaxed">
-            {dataString}
-          </pre>
+      {/* 4. 컨텐츠 영역 (Floating 버튼 포함) */}
+      <div class="relative group bg-slate-900 flex-1 min-h-0 overflow-hidden flex flex-col">
+        {/* 💡 Floating Copy Button: 마우스를 올렸을 때만 나타남 */}
+        <div
+          x-show="activeTab === 'res-body'"
+          class="absolute top-3 right-3 z-10 transition-opacity duration-200 opacity-0 group-hover:opacity-100"
+        >
+          <button
+            type="button"
+            x-on:click="copy('res-json')"
+            x-bind:class="copied ? 'bg-green-600 border-green-500' : 'bg-slate-800/80 hover:bg-slate-700 border-slate-600'"
+            class="flex items-center gap-1.5 px-2.5 py-1.5 border rounded-lg text-white text-[10px] font-bold backdrop-blur-sm transition-all active:scale-95 shadow-xl"
+          >
+            <span x-text="copied ? '✅' : '📋'">📋</span>
+            <span x-text="copied ? 'Copied!' : 'Copy'">Copy</span>
+          </button>
         </div>
-        <div x-show="activeTab === 'res-headers'" style="display: none;">
-          <table class="w-full text-left border-collapse">
-            <tbody>
-              {Object.entries(response.headers).map(([key, value]) => (
-                <tr class="border-b border-slate-800">
-                  <td class="py-2 pr-4 text-indigo-400 font-semibold">{key}</td>
-                  <td class="py-2 text-slate-300 break-all">{value as string}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div x-show="activeTab === 'req-headers'" style="display: none;">
-          <table class="w-full text-left border-collapse">
-            <tbody>
-              {Object.entries(request.headers).map(([key, value]) => (
-                <tr class="border-b border-slate-800">
-                  <td class="py-2 pr-4 text-emerald-400 font-semibold">{key}</td>
-                  <td class="py-2 text-slate-300 break-all">{value as string}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div x-show="activeTab === 'req-body'" style="display: none;">
-          <pre class="leading-relaxed">{request.body || 'No request body.'}</pre>
+
+        <div class="p-4 text-slate-300 font-mono text-sm overflow-auto flex-1 custom-scrollbar">
+          <div x-show="activeTab === 'res-body'">
+            <pre id="res-json" class="leading-relaxed whitespace-pre-wrap break-all">
+              {dataString}
+            </pre>
+          </div>
+          <div x-show="activeTab === 'res-headers'" style="display: none;">
+            <table class="w-full text-left border-collapse">
+              <tbody>
+                {Object.entries(response.headers).map(([key, value]) => (
+                  <tr class="border-b border-slate-800">
+                    <td class="py-2 pr-4 text-indigo-400 font-semibold">{key}</td>
+                    <td class="py-2 text-slate-300 break-all">{value as string}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div x-show="activeTab === 'req-headers'" style="display: none;">
+            <table class="w-full text-left border-collapse">
+              <tbody>
+                {Object.entries(request.headers).map(([key, value]) => (
+                  <tr class="border-b border-slate-800">
+                    <td class="py-2 pr-4 text-emerald-400 font-semibold">{key}</td>
+                    <td class="py-2 text-slate-300 break-all">{value as string}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div x-show="activeTab === 'req-body'" style="display: none;">
+            <pre class="leading-relaxed whitespace-pre-wrap break-all">
+              {request.body || 'No request body.'}
+            </pre>
+          </div>
         </div>
       </div>
 
-      {/* 하단 푸터 */}
+      {/* 5. 하단 푸터 */}
       {filename && (
         <div class="px-4 py-1.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono">
           <div class="flex items-center gap-1.5">
