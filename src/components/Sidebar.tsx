@@ -6,18 +6,26 @@ export const SidebarList = ({ files }: { files: string[] }) => (
       </div>
     ) : (
       files.map((file) => (
-        <li class="group flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-700 transition-colors animate-in slide-in-from-left-2 duration-200">
+        <li
+          /* 💡 2. 상태에 따라 배경색(bg) 변경 */
+          x-bind:class={`activeFile === '${file}' ? 'bg-slate-700 ring-1 ring-slate-600' : 'hover:bg-slate-700'`}
+          class="group flex items-center gap-1 px-2 py-1 rounded transition-colors animate-in slide-in-from-left-2 duration-200"
+        >
           {/* 조회 버튼 */}
           <button
             hx-get={`/snapshots/${file}`}
             hx-target="#result"
-            class="flex-1 text-left text-[11px] font-mono text-slate-300 hover:text-indigo-300 truncate outline-none"
+            /* 💡 3. 클릭 시 activeFile 상태를 내 파일명으로 업데이트 */
+            x-on:click={`activeFile = '${file}'`}
+            /* 💡 4. 상태에 따라 텍스트 색상(text) 변경 */
+            x-bind:class={`activeFile === '${file}' ? 'text-indigo-300 font-bold' : 'text-slate-300 hover:text-indigo-300'`}
+            class="flex-1 text-left text-[11px] font-mono truncate outline-none"
             title={file}
           >
             {file}
           </button>
 
-          {/* 💡 삭제 버튼 (HTMX) */}
+          {/* 삭제 버튼 (HTMX) */}
           <button
             hx-delete={`/snapshots/${file}`}
             hx-confirm={`'${file}' 스냅샷을 삭제하시겠습니까?`}
@@ -50,13 +58,17 @@ export const SidebarList = ({ files }: { files: string[] }) => (
 );
 
 export const Sidebar = ({ files }: { files: string[] }) => (
-  <aside class="w-64 bg-slate-800 text-slate-300 h-screen overflow-y-auto flex-shrink-0 flex flex-col border-r border-slate-700">
+  <aside
+    class="w-64 bg-slate-800 text-slate-300 h-screen overflow-y-auto flex-shrink-0 flex flex-col border-r border-slate-700"
+    /* 💡 1. 여기에 상태 선언! (HTMX가 교체하지 않는 최상단 부모) */
+    x-data="{ activeFile: '' }"
+  >
     <div class="p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
       <h2 class="text-sm font-bold text-slate-100 uppercase tracking-wider">📁 Snapshots</h2>
     </div>
     <div
       class="p-2 flex-1"
-      // 💡 핵심: 'snapshotUpdated' 이벤트가 발생하면 '/sidebar'로 GET 요청을 보내서 자신을 갱신함
+      // HTMX 교체 영역 (이 안의 내용은 서버 통신 시 싹 갈아엎어짐)
       hx-get="/sidebar"
       hx-trigger="snapshotUpdated from:body"
     >
