@@ -43,9 +43,17 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 allSuggestions: ${JSON.stringify([...(config.commonEndpoints || []), ...suggestions])},
                 showSuggestions: false,
 
-                // 💡 폼 복원 이벤트 리스너
+                // 💡 폼 제어 및 반응형 로직
                 get formControl() {
                   return {
+                    ['x-init']() {
+                      // 💡 GET으로 변경 시 Body 탭에 있었다면 Params로 자동 이동
+                      this.$watch('method', (val) => {
+                        if (val === 'GET' && this.activeTab === 'body') {
+                          this.activeTab = 'params';
+                        }
+                      });
+                    },
                     ['x-on:fill-request-form.window']($event) {
                       const data = $event.detail;
                       this.method = data.method;
@@ -172,6 +180,8 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 {['params', 'headers', 'body'].map((tab) => (
                   <button
                     type="button"
+                    /* 💡 GET일 때는 body 탭을 아예 렌더링하지 않거나 숨김 */
+                    x-show={`'${tab}' !== 'body' || method !== 'GET'`}
                     x-on:click={`activeTab = '${tab}'`}
                     x-bind:class={`activeTab === '${tab}' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-800'`}
                     class="px-5 py-2 capitalize transition-all"
@@ -276,7 +286,8 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                   </button>
                 </div>
 
-                <div x-show="activeTab === 'body'" style="display: none;">
+                {/* 💡 컨텐츠 영역도 GET일 때는 activeTab이 body여도 노출되지 않도록 이중 잠금 */}
+                <div x-show="activeTab === 'body' && method !== 'GET'" style="display: none;">
                   <div class="flex gap-4 mb-3 text-xs font-bold text-slate-500 uppercase">
                     <label class="flex items-center gap-1 cursor-pointer">
                       <input type="radio" x-model="bodyType" value="none" /> None
