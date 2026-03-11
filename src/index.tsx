@@ -1,10 +1,16 @@
+import { existsSync, mkdirSync } from 'node:fs';
+
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
-import { config, workspaceDir } from './config';
+import { config, functionsDir, workspaceDir } from './config';
 import homeRoute from './routes/home';
 import requestRoute from './routes/request';
 import snapshots from './routes/snapshots';
+
+if (!existsSync(functionsDir)) {
+  mkdirSync(functionsDir, { recursive: true });
+}
 
 const app = new Hono();
 
@@ -20,7 +26,5 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`\n🚀 Pocket Client is running!${loadedEnv}`);
   console.log(`🔗 Local: http://localhost:${info.port}`);
   console.log(`📁 Workspace: ${workspaceDir}`);
-  console.log(
-    `⚙️  Config: Port ${config.port}, Global Headers: ${Object.keys(config.globalHeaders).length} items\n`,
-  );
+  console.log(`⚙️  Functions: ${functionsDir}\n`);
 });

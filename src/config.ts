@@ -13,6 +13,8 @@ export interface PocketConfig {
 
 const __filename = fileURLToPath(import.meta.url);
 export const workspaceDir = dirname(__filename);
+// 💡 커스텀 함수 디렉토리 경로 정의
+export const functionsDir = join(workspaceDir, 'functions');
 
 // 기본 내부 설정 (Fallback)
 const INTERNAL_DEFAULT: PocketConfig = {

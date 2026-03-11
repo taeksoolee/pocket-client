@@ -7,11 +7,9 @@ export const SidebarList = ({ files }: { files: string[] }) => (
     ) : (
       files.map((file) => (
         <li
-          /* 💡 activeFile 상태에 따른 스타일 바인딩 */
           x-bind:class={`activeFile === '${file}' ? 'bg-slate-700 ring-1 ring-slate-600' : 'hover:bg-slate-700'`}
           class="group flex items-center rounded transition-colors animate-in slide-in-from-left-2 duration-200"
         >
-          {/* 조회 버튼 (클릭 영역) */}
           <button
             hx-get={`/snapshots/${file}`}
             hx-target="#result"
@@ -23,7 +21,6 @@ export const SidebarList = ({ files }: { files: string[] }) => (
             {file}
           </button>
 
-          {/* 삭제 버튼 (HTMX) */}
           <button
             hx-delete={`/snapshots/${file}`}
             hx-confirm={`'${file}' 스냅샷을 삭제하시겠습니까?`}
@@ -66,11 +63,16 @@ export const Sidebar = ({ files }: { files: string[] }) => (
       minW: 200,
       maxW: 600,
       isResizing: false,
+      showFunctions: false,
+      actions: [],
 
       get sidebarEvents() {
         return {
           ['x-init']() {
             this.$watch('width', val => localStorage.setItem('sidebar-width', val));
+            setTimeout(() => {
+              if (window.PocketActions) { this.actions = Object.keys(window.PocketActions); }
+            }, 1000);
           },
           ['x-on:snapshot-updated.window']($event) {
             if($event.detail.filename) this.activeFile = decodeURIComponent($event.detail.filename);
@@ -78,51 +80,94 @@ export const Sidebar = ({ files }: { files: string[] }) => (
         }
       },
 
+      // 💡 레이어 전용 바인딩 추가
+      get functionLayer() {
+        return {
+          ['x-on:click.outside']() { this.showFunctions = false }
+        }
+      },
+
       startResize(e) {
         this.isResizing = true;
         const startX = e.clientX;
         const startWidth = this.width;
-
-        const onMouseMove = (moveEvent) => {
+        const onMouseMove = (m) => {
           if (!this.isResizing) return;
-          const nextWidth = startWidth + (moveEvent.clientX - startX);
-          if (nextWidth >= this.minW && nextWidth <= this.maxW) {
-            this.width = nextWidth;
-          }
+          const nextW = startWidth + (m.clientX - startX);
+          if (nextW >= this.minW && nextW <= this.maxW) this.width = nextW;
         };
-
         const onMouseUp = () => {
           this.isResizing = false;
           document.removeEventListener('mousemove', onMouseMove);
           document.removeEventListener('mouseup', onMouseUp);
         };
-
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
       }
     }`}
     x-bind="sidebarEvents"
   >
-    {/* 헤더 고정 */}
-    <div class="p-4 border-b border-slate-700 bg-slate-800 z-10 flex-shrink-0">
+    <div class="p-4 border-b border-slate-700 bg-slate-800 z-10 flex-shrink-0 flex justify-between items-center">
       <h2 class="text-sm font-bold text-slate-100 uppercase tracking-wider">📁 Snapshots</h2>
+      <button
+        x-on:click="showFunctions = !showFunctions"
+        x-bind:class="showFunctions ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-700 text-slate-300 border-slate-600 hover:text-white hover:bg-slate-600'"
+        class="flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-black uppercase transition-all"
+      >
+        <span>⚡</span>
+        <span>Functions</span>
+      </button>
     </div>
 
-    {/* 목록 영역 스크롤 */}
+    {/* 💡 x-bind="functionLayer"로 바인딩 처리 */}
+    <div
+      x-show="showFunctions"
+      x-bind="functionLayer"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 -translate-y-2"
+      x-transition:enter-end="opacity-100 translate-y-0"
+      class="absolute top-[58px] left-2 right-2 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-50 p-4"
+      style="display: none;"
+    >
+      <div class="text-[9px] font-bold text-slate-500 uppercase mb-3 flex items-center justify-between">
+        <span>Custom Actions</span>
+        <span class="text-indigo-500">Manual Run</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <template x-for="name in actions" x-bind:key="name">
+          <button
+            x-on:click="window.PocketActions[name](); showFunctions = false"
+            class="flex flex-col items-center justify-center p-3 rounded-md bg-slate-800 border border-slate-700 hover:border-indigo-500 hover:bg-slate-700 transition-all group"
+          >
+            <div class="w-7 h-7 rounded bg-slate-700 flex items-center justify-center mb-1.5 group-hover:bg-indigo-600 transition-colors shadow-inner">
+              <span class="text-[10px] font-black text-indigo-400 group-hover:text-white">f</span>
+            </div>
+            <span
+              class="text-[10px] font-mono text-slate-300 truncate w-full text-center"
+              x-text="name"
+            ></span>
+          </button>
+        </template>
+
+        <div
+          x-show="actions.length === 0"
+          class="col-span-2 py-4 text-center text-[10px] text-slate-500 italic"
+        >
+          No manual actions registered.
+        </div>
+      </div>
+    </div>
+
     <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
       <SidebarList files={files} />
     </div>
 
-    {/* 💡 굵기를 키운 리사이저 핸들 */}
     <div
       x-on:mousedown="startResize($event)"
-      /* 클릭 반응 영역을 w-4로 확장 */
       class="absolute top-0 -right-[6px] bottom-0 w-4 group/resizer cursor-col-resize z-50 flex items-center justify-center"
     >
-      {/* 리사이저 라인 가이드 */}
       <div class="absolute inset-y-0 right-[6px] w-[2px] group-hover/resizer:bg-indigo-500/50 transition-colors"></div>
-
-      {/* 💡 핸들 두께를 w-3으로 더 굵게 수정 */}
       <div class="relative z-10 w-3 h-20 bg-slate-600 rounded-full group-hover/resizer:bg-indigo-500 group-hover/resizer:h-28 transition-all duration-200 shadow-xl flex flex-col items-center justify-center gap-1.5 border border-slate-700/50">
         <div class="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover/resizer:bg-white/90"></div>
         <div class="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover/resizer:bg-white/90"></div>

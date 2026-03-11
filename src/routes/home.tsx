@@ -1,21 +1,34 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { Hono } from 'hono';
 
 import { Home } from '../components/Home';
 import { SidebarList } from '../components/Sidebar';
+import { functionsDir } from '../config'; // 💡 경로 추가
 import { getSnapshots, getURLSuggestions } from '../utils/snapshot';
 
 const home = new Hono();
 
 home.get('/', (c) => {
   const files = getSnapshots();
-  const suggestions = getURLSuggestions(); // 💡 히스토리 스캔
-  return c.html(<Home files={files} suggestions={suggestions} />);
+  const suggestions = getURLSuggestions();
+
+  // 💡 커스텀 함수 코드를 객체(Key-Value) 형태로 미리 읽기
+  const functionsMap: Record<string, string> = {};
+  if (existsSync(functionsDir)) {
+    const fFiles = readdirSync(functionsDir).filter((f) => f.endsWith('.js'));
+    fFiles.forEach((filename) => {
+      const name = filename.replace('.js', '');
+      functionsMap[name] = readFileSync(join(functionsDir, filename), 'utf-8');
+    });
+  }
+
+  return c.html(<Home files={files} suggestions={suggestions} functionsMap={functionsMap} />);
 });
 
-// 💡 사이드바 갱신 시에도 추천 데이터는 필요할 수 있으므로 나중에 확장 가능
 home.get('/sidebar', (c) => {
   const files = getSnapshots();
-  // SidebarList는 files만 필요하므로 기존 유지
   return c.html(<SidebarList files={files} />);
 });
 
