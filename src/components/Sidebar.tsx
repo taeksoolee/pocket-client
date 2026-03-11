@@ -1,4 +1,3 @@
-// 💡 리스트만 따로 렌더링하는 컴포넌트 (서버에서 이 조각만 따로 요청할 것임)
 export const SidebarList = ({ files }: { files: string[] }) => (
   <ul id="snapshot-list" class="space-y-1">
     {files.length === 0 ? (
@@ -7,16 +6,42 @@ export const SidebarList = ({ files }: { files: string[] }) => (
       </div>
     ) : (
       files.map((file) => (
-        <li>
+        <li class="group flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-700 transition-colors animate-in slide-in-from-left-2 duration-200">
+          {/* 조회 버튼 */}
           <button
             hx-get={`/snapshots/${file}`}
             hx-target="#result"
-            hx-push-url="false"
-            class="w-full text-left text-[11px] font-mono px-3 py-2 rounded hover:bg-slate-700 hover:text-indigo-300 transition truncate group flex justify-between items-center"
+            class="flex-1 text-left text-[11px] font-mono text-slate-300 hover:text-indigo-300 truncate outline-none"
             title={file}
           >
-            <span class="truncate">{file}</span>
-            <span class="opacity-0 group-hover:opacity-100 text-indigo-500 text-[10px]">View</span>
+            {file}
+          </button>
+
+          {/* 💡 삭제 버튼 (HTMX) */}
+          <button
+            hx-delete={`/snapshots/${file}`}
+            hx-confirm={`'${file}' 스냅샷을 삭제하시겠습니까?`}
+            hx-target="#result"
+            class="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all hover:scale-110"
+            title="삭제"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
           </button>
         </li>
       ))

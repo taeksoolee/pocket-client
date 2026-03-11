@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 import { workspaceDir } from '../config.js';
@@ -72,5 +72,16 @@ export function getSnapshot(filename: string) {
     return JSON.parse(content);
   } catch (e) {
     return null;
+  }
+}
+
+export function deleteSnapshot(filename: string) {
+  const safeName = basename(filename);
+  const filePath = join(workspaceDir, 'results', safeName);
+  try {
+    unlinkSync(filePath);
+    return true;
+  } catch (e) {
+    return false;
   }
 }
