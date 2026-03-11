@@ -32,8 +32,22 @@ snapshots.get('/:filename', (c) => {
     };
   }
 
-  // 💡 메인 뷰에서 만든 SuccessCard를 그대로 재사용! (코드 중복 제거)
-  return c.html(<SuccessCard filename={filename} request={requestData} response={responseData} />);
+  // 💡 저장된 ISO 타임스탬프를 읽기 좋은 포맷으로 변환
+  let formattedTimestamp = '';
+  if (snapshot.timestamp) {
+    const d = new Date(snapshot.timestamp);
+    formattedTimestamp = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+  }
+
+  // 💡 메인 뷰에서 만든 SuccessCard를 그대로 재사용! (timestamp 추가)
+  return c.html(
+    <SuccessCard
+      filename={filename}
+      request={requestData}
+      response={responseData}
+      timestamp={formattedTimestamp}
+    />,
+  );
 });
 
 snapshots.delete('/:filename', (c) => {

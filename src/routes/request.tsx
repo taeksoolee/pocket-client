@@ -80,6 +80,10 @@ request.post('/', async (c) => {
     const responseData = isJson ? await response.json() : await response.text();
     const duration = Date.now() - startTime;
 
+    // 💡 인간 친화적인 타임스탬프 생성 (YYYY-MM-DD HH:mm:ss)
+    const now = new Date();
+    const formattedTimestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
     const requestData = { method, url: finalUrl, headers: reqHeadersObj, body: fetchBody };
     const responseDataObj = {
       status: response.status,
@@ -91,17 +95,21 @@ request.post('/', async (c) => {
     const { filename } = saveSnapshot({ request: requestData, response: responseDataObj });
 
     // 💡 수정: 단순히 신호만 보내는 게 아니라, 생성된 파일명을 객체에 담아 이벤트로 발생시킴
-    // HTMX의 HX-Trigger는 JSON 형식을 지원하며, 이는 브라우저의 CustomEvent 디테일로 전달됨
     c.header('HX-Trigger', JSON.stringify({ 'snapshot-updated': { filename } }));
 
     return c.html(
-      <SuccessCard filename={filename} request={requestData} response={responseDataObj} />,
+      <SuccessCard
+        filename={filename}
+        request={requestData}
+        response={responseDataObj}
+        timestamp={formattedTimestamp} // 💡 시간 정보 전달
+      />,
     );
   } catch (err: any) {
     // 💡 에러 발생 시 타이머 해제
     clearTimeout(timeoutId);
 
-    // 💡 타임아웃 에러(AbortError)인 경우 별도 메시지 처리 (B안: 스냅샷 저장 안 함)
+    // 💡 타임아웃 에러(AbortError)인 경우 별도 메시지 처리
     if (err.name === 'AbortError') {
       return c.html(
         <ErrorCard

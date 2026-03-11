@@ -14,10 +14,12 @@ export const SuccessCard = ({
   filename,
   request,
   response,
+  timestamp, // 💡 전달받은 타임스탬프
 }: {
   filename?: string;
   request: SnapshotRequest;
   response: SnapshotResponse;
+  timestamp?: string;
 }) => {
   const dataString = JSON.stringify(response.data, null, 2);
   const sizeKb = (new Blob([dataString]).size / 1024).toFixed(2);
@@ -41,6 +43,7 @@ export const SuccessCard = ({
         }
       }"
     >
+      {/* 1. 상단 헤더: 기술적 지표 위주 */}
       <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
           <span
@@ -69,11 +72,17 @@ export const SuccessCard = ({
         )}
       </div>
 
-      <div
-        class="px-4 py-2 bg-white border-b border-slate-100 text-xs font-mono text-slate-500 truncate"
-        title={request.url}
-      >
-        🌐 {request.url}
+      {/* 2. URL 및 요청시간 라인: flex로 양끝 배치 */}
+      <div class="px-4 py-2 bg-white border-b border-slate-100 text-[11px] font-mono text-slate-500 flex justify-between items-center gap-4">
+        <div class="truncate" title={request.url}>
+          🌐 {request.url}
+        </div>
+        {timestamp && (
+          <div class="flex-shrink-0 text-slate-400">
+            <span class="font-sans mr-1">요청시간:</span>
+            <span>{timestamp}</span>
+          </div>
+        )}
       </div>
 
       <div class="flex border-b border-slate-200 text-xs font-medium bg-slate-50/50 overflow-x-auto">
