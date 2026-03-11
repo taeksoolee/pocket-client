@@ -1,51 +1,52 @@
 import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import unusedImports from 'eslint-plugin-unused-imports';
+import tseslint from 'typescript-eslint';
 
 export default [
-  // 1. Lint 검사에서 제외할 폴더 및 파일들
   {
     ignores: ['node_modules/', 'dev/', 'dist/', 'pocket-api/', 'build.js', 'dev.js'],
   },
 
-  // 2. 기본 추천 룰셋 (ESLint & TypeScript-ESLint)
-  // eslint.configs.recommended는 단일 객체이므로 그냥 넣고,
-  // tseslint.configs.recommended는 배열이므로 Spread(...) 연산자로 풀어줍니다.
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
 
-  // 3. 커스텀 룰 (우리가 빡빡하게 잡을 규칙들)
   {
+    // 💡 플러그인 등록 (Flat Config 방식)
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+      'unused-imports': unusedImports,
+    },
     rules: {
-      // == 대신 무조건 === 사용 (JS의 기괴한 타입 변환 버그 원천 차단)
+      // --- 기존 룰 ---
       eqeqeq: ['error', 'always'],
-
-      // let으로 선언하고 재할당 안 한 변수를 자동으로 const로 변경
       'prefer-const': 'error',
-
-      // var 사용 금지 (호이스팅 지옥 방지, ES6 모던 JS의 기본)
       'no-var': 'error',
-
-      // { data: data } 같은 형태를 { data } 로 짧게 쓰도록 강제
       'object-shorthand': 'error',
-
-      // console.log 남겨두면 경고
       'no-console': 'warn',
-
-      // if문 등에서 중괄호 {} 생략 금지
       curly: ['error', 'all'],
-
-      // 타입만 가져올 때는 'import type' 사용 강제 (번들 용량 최적화)
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
-
-      // any 타입 사용 시 에러 대신 경고만
       '@typescript-eslint/no-explicit-any': 'warn',
 
-      // 선언해놓고 안 쓰는 변수 경고. 단, '_'로 시작하는 변수는 무시
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // --- 🚀 새로 추가된 Import 관리 룰 ---
+
+      // 1. Import 자동 정렬 (node 내장 모듈 -> 외부 패키지 -> 내부 파일 순으로 예쁘게 정렬됨)
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+
+      // 2. 안 쓰는 Import 및 변수 자동 제거
+      // 주의: 기존 no-unused-vars를 끄고(off), unused-imports 플러그인 룰로 대체해야 충돌이 안 남!
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'error', // 안 쓰는 import문은 아예 빨간줄 그고 fix 시 삭제
+      'unused-imports/no-unused-vars': [
+        'warn',
+        { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
+      ],
     },
   },
 
-  // 4. Prettier 룰을 맨 마지막에 덮어씌워서 포맷팅 충돌 완벽 방지
+  // Prettier는 항상 맨 마지막에!
   eslintConfigPrettier,
 ];

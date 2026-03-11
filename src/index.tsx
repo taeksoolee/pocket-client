@@ -1,9 +1,9 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { basename,dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
-import { jsx } from 'hono/jsx';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join, dirname, basename } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // 💡 핵심 변경점: ESM 환경에서 현재 실행 중인 파일(server.mjs)의 위치를 동적으로 추적
 const __filename = fileURLToPath(import.meta.url);
