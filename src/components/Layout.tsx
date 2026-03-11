@@ -1,4 +1,4 @@
-import { ALPINE_LIB, HTMX_LIB } from '../config';
+import { ALPINE_LIB, HTMX_LIB, TAILWIND_CSS } from '../config';
 
 export const Layout = ({ children }: { children: any }) => (
   <html lang="ko">
@@ -8,9 +8,9 @@ export const Layout = ({ children }: { children: any }) => (
       <title>PocketAPI Workspace</title>
       <script dangerouslySetInnerHTML={{ __html: HTMX_LIB }}></script>
       <script defer dangerouslySetInnerHTML={{ __html: ALPINE_LIB }}></script>
-      <script src="https://cdn.tailwindcss.com"></script>
+      {/* 💡 CDN 대신 빌드된 CSS를 직접 주입! 오프라인 완벽 대응 */}
+      <style dangerouslySetInnerHTML={{ __html: TAILWIND_CSS }}></style>
     </head>
-    {/* 💡 Flex 레이아웃으로 변경 (화면 꽉 채우고 스크롤 제어) */}
     <body class="bg-slate-50 text-slate-900 font-sans h-screen flex overflow-hidden">
       {children}
     </body>

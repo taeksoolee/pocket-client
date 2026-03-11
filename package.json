@@ -25,6 +25,7 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "htmx.org": "^2.0.4",
     "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.1",
     "typescript-eslint": "^8.57.0"
   }
 }
