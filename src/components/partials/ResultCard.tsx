@@ -25,7 +25,22 @@ export const SuccessCard = ({
   return (
     <div
       class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full animate-in fade-in duration-300"
-      x-data="{ activeTab: 'res-body' }"
+      /* 💡 핵심: 탭 상태뿐만 아니라 복사 상태(copied)와 복사 함수(copy)도 여기서 관리! */
+      x-data="{ 
+        activeTab: 'res-body',
+        copied: false,
+        async copy(targetId) {
+          const el = document.getElementById(targetId);
+          if (!el) return;
+          try {
+            await navigator.clipboard.writeText(el.innerText);
+            this.copied = true;
+            setTimeout(() => { this.copied = false }, 2000);
+          } catch (err) {
+            console.error('Copy failed', err);
+          }
+        }
+      }"
     >
       {/* 상단 헤더 */}
       <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
@@ -45,11 +60,14 @@ export const SuccessCard = ({
         </div>
 
         {filename && (
+          /* 💡 x-on:click으로 내부 함수 호출, x-bind:class와 x-text로 상태에 따른 UI 자동 변경 */
           <button
-            onclick="copyToClipboard(this, 'res-json')"
-            class="text-xs flex items-center gap-1 bg-white px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition shadow-sm active:scale-95"
+            type="button"
+            x-on:click="copy('res-json')"
+            x-bind:class="copied ? 'text-green-600 bg-green-50 border-green-200' : 'text-slate-600 hover:bg-slate-50 border-slate-200'"
+            class="text-xs flex items-center gap-1 bg-white px-3 py-1.5 border rounded-lg transition shadow-sm active:scale-95"
           >
-            📋 Copy Response
+            <span x-text="copied ? '✅ Copied!' : '📋 Copy Response'">📋 Copy Response</span>
           </button>
         )}
       </div>
