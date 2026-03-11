@@ -21,7 +21,12 @@ export const SuccessCard = ({
   response: SnapshotResponse;
   timestamp?: string;
 }) => {
-  const dataString = JSON.stringify(response.data, null, 2);
+  // 💡 수정: 데이터가 객체일 때만 stringify 하고, 문자열이면 그대로 노출하여 불필요한 "" 제거
+  const dataString =
+    typeof response.data === 'object' && response.data !== null
+      ? JSON.stringify(response.data, null, 2)
+      : String(response.data);
+
   const sizeKb = (new Blob([dataString]).size / 1024).toFixed(2);
 
   return (
@@ -43,7 +48,7 @@ export const SuccessCard = ({
         }
       }"
     >
-      {/* 1. 상단 헤더 */}
+      {/* 상단 헤더 */}
       <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
           <span
@@ -72,7 +77,7 @@ export const SuccessCard = ({
         )}
       </div>
 
-      {/* 2. URL 및 요청시간 라인 */}
+      {/* URL 및 요청시간 라인 */}
       <div class="px-4 py-2 bg-white border-b border-slate-100 text-[11px] font-mono text-slate-500 flex justify-between items-center gap-4">
         <div class="truncate" title={request.url}>
           🌐 {request.url}
@@ -85,7 +90,7 @@ export const SuccessCard = ({
         )}
       </div>
 
-      {/* 3. 탭 네비게이션 */}
+      {/* 탭 네비게이션 */}
       <div class="flex border-b border-slate-200 text-xs font-medium bg-slate-50/50 overflow-x-auto">
         {['res-body', 'res-headers', 'req-headers', 'req-body'].map((tab) => (
           <button
@@ -99,7 +104,7 @@ export const SuccessCard = ({
         ))}
       </div>
 
-      {/* 4. 컨텐츠 영역 */}
+      {/* 컨텐츠 영역 */}
       <div class="p-4 bg-slate-900 text-slate-300 font-mono text-sm overflow-auto max-h-[600px] flex-1">
         <div x-show="activeTab === 'res-body'">
           <pre id="res-json" class="leading-relaxed">
@@ -135,7 +140,7 @@ export const SuccessCard = ({
         </div>
       </div>
 
-      {/* 5. 💡 하단 푸터: 파일 경로 정보 (IDE 상태바 스타일) */}
+      {/* 하단 푸터 */}
       {filename && (
         <div class="px-4 py-1.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono">
           <div class="flex items-center gap-1.5">
