@@ -10,14 +10,9 @@ export const Layout = ({ children }: { children: any }) => (
       <script defer dangerouslySetInnerHTML={{ __html: ALPINE_LIB }}></script>
       <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-slate-50 text-slate-900 font-sans p-8">
-      <div class="max-w-4xl mx-auto">
-        <header class="mb-8">
-          <h1 class="text-3xl font-bold text-indigo-600">PocketAPI 🚀</h1>
-          <p class="text-slate-500">Embedded Local-first API Tool</p>
-        </header>
-        {children}
-      </div>
+    {/* 💡 Flex 레이아웃으로 변경 (화면 꽉 채우고 스크롤 제어) */}
+    <body class="bg-slate-50 text-slate-900 font-sans h-screen flex overflow-hidden">
+      {children}
     </body>
   </html>
 );

@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { workspaceDir } from '../config.js';
@@ -40,4 +40,25 @@ export function saveSnapshot(params: SnapshotParams) {
   writeFileSync(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
 
   return { filename, filePath };
+}
+
+export function getSnapshots(): string[] {
+  const resultDir = join(workspaceDir, 'results');
+  try {
+    // 폴더 내의 파일들을 읽어서 json 파일만 필터링하고, 수정 시간(mtime) 기준으로 내림차순 정렬
+    const files = readdirSync(resultDir)
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => {
+        const filePath = join(resultDir, file);
+        const stats = statSync(filePath);
+        return { file, mtime: stats.mtimeMs };
+      })
+      .sort((a, b) => b.mtime - a.mtime)
+      .map((item) => item.file);
+
+    return files;
+  } catch (e) {
+    // results 폴더가 아직 없거나 읽기 에러 시 빈 배열 반환
+    return [];
+  }
 }
