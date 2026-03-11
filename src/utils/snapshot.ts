@@ -37,7 +37,9 @@ export function saveSnapshot(params: SnapshotParams) {
   const ss = timestamp.getSeconds().toString().padStart(2, '0');
   const formattedDate = `${y}${m}${d}${hh}${mm}${ss}`;
 
-  const safeUrl = params.request.url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+  // 💡 파일명 생성 시 한글 디코딩 및 한글 허용 정규식 적용
+  const decodedUrl = decodeURIComponent(params.request.url);
+  const safeUrl = decodedUrl.replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 50);
 
   // 💡 파일명 조립: YYMMDDHHmmss_METHOD_URL.json
   const filename = `${formattedDate}_${params.request.method}_${safeUrl}.json`;
@@ -73,8 +75,9 @@ export function getURLSuggestions(): string[] {
       const content = fs.readFileSync(path.join(resultsDir, file), 'utf-8');
       const data = JSON.parse(content);
       if (data.request?.url) {
+        // 💡 자동완성 목록에 추가할 때도 한글 디코딩 적용
         const url = new URL(data.request.url);
-        paths.add(url.pathname);
+        paths.add(decodeURIComponent(url.pathname));
       }
     } catch (e) {
       console.warn(`⚠️ 결과물 파싱 실패: ${file}`, (e as Error).message);
