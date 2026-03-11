@@ -13,3 +13,5 @@ dist/
 
 # 로그
 npm-debug.log*
+
+output.css
