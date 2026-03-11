@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "build": "node build.js",
-    "start": "node pocket-api/server.mjs",
-    "dev": "node build.js && node pocket-api/server.mjs"
+    "start": "node dist/server.mjs",
+    "dev": "node dev.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
     "hono": "^4.6.0"
   },
   "devDependencies": {
+    "@types/node": "^25.4.0",
     "alpinejs": "^3.14.0",
     "esbuild": "^0.24.0",
     "htmx.org": "^2.0.4"
