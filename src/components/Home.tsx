@@ -53,6 +53,18 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
             }`}
           >
             <div class="space-y-2">
+              {/* 💡 BaseURL 인디케이터 영역 (config.baseUrl이 있을 때만 노출) */}
+              {config.baseUrl && (
+                <div class="flex items-center px-0.5">
+                  <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-[10px] font-black text-indigo-600 uppercase tracking-wider shadow-sm">
+                    <span class="text-indigo-400">🔗</span>
+                    <span>Base:</span>
+                    <span class="font-mono lowercase text-indigo-500">{config.baseUrl}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* URL 입력 바 */}
               <div class="flex gap-4">
                 <select
                   name="method"
@@ -73,10 +85,11 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                     autocomplete="off"
                     class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm"
                     placeholder={
-                      config.baseUrl ? '/api/v1 (baseUrl 설정됨)' : 'https://api.example.com'
+                      config.baseUrl ? '/api/v1 (baseUrl 자동결합)' : 'https://api.example.com'
                     }
                   />
 
+                  {/* 자동완성 드롭다운 */}
                   <div
                     x-show="showSuggestions && filteredSuggestions.length > 0"
                     class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto"
@@ -99,6 +112,8 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                   Send
                 </button>
               </div>
+
+              {/* Target URL 프리뷰 */}
               <div
                 x-show="url.startsWith('/') && baseUrl"
                 class="text-[10px] font-mono text-slate-400 pl-32 truncate italic"
@@ -109,6 +124,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
               </div>
             </div>
 
+            {/* 탭 네비게이션 */}
             <div class="flex border-b border-slate-200 text-sm font-medium mt-6">
               {['params', 'headers', 'body'].map((tab) => (
                 <button
@@ -122,6 +138,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
               ))}
             </div>
 
+            {/* 탭 컨텐츠 */}
             <div class="bg-slate-50/50 p-4 rounded-b-lg border-x border-b border-slate-200 min-h-[150px]">
               {/* 🎯 Params */}
               <div x-show="activeTab === 'params'" class="space-y-2">
@@ -165,7 +182,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 <button
                   type="button"
                   x-on:click="addRow('params')"
-                  class="text-xs text-indigo-600 font-bold hover:underline mt-2"
+                  class="text-xs text-indigo-600 font-bold hover:underline mt-2 flex items-center gap-1"
                 >
                   + Add Parameter
                 </button>
@@ -213,7 +230,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 <button
                   type="button"
                   x-on:click="addRow('headers')"
-                  class="text-xs text-indigo-600 font-bold hover:underline mt-2"
+                  class="text-xs text-indigo-600 font-bold hover:underline mt-2 flex items-center gap-1"
                 >
                   + Add Header
                 </button>
@@ -232,10 +249,13 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 <div x-show="bodyType === 'json'">
                   <textarea
                     x-model="bodyContent"
-                    class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:border-indigo-500 bg-white"
+                    class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:border-indigo-500 bg-white shadow-inner"
                     rows={6}
                     placeholder='{\n  "hello": "world"\n}'
                   ></textarea>
+                </div>
+                <div x-show="bodyType === 'none'" class="text-slate-400 text-xs italic py-4">
+                  This request does not have a body.
                 </div>
               </div>
             </div>
@@ -247,7 +267,11 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
             />
           </form>
         </div>
-        <div id="result"></div>
+        <div id="result">
+          <div class="text-center text-slate-400 py-10 border-2 border-dashed border-slate-200 rounded-xl">
+            🚀 URL을 입력하고 Send를 눌러보세요.
+          </div>
+        </div>
       </div>
     </main>
   </Layout>
