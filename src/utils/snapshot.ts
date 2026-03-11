@@ -9,6 +9,7 @@ export interface SnapshotParams {
   status: number;
   duration: number;
   data: any;
+  headers?: Record<string, string>; // 💡 헤더 타입 추가
 }
 
 export function saveSnapshot(params: SnapshotParams) {
@@ -27,13 +28,14 @@ export function saveSnapshot(params: SnapshotParams) {
   // 저장할 스냅샷 객체 구조
   const snapshot = {
     meta: {
-      url,
-      method,
-      status,
-      duration_ms: duration,
+      url: params.url,
+      method: params.method,
+      status: params.status,
+      duration: params.duration,
+      headers: params.headers || {}, // 💡 메타데이터에 헤더 저장
       timestamp: new Date().toISOString(),
     },
-    data,
+    data: params.data,
   };
 
   // 로컬 파일 시스템에 JSON 쓰기

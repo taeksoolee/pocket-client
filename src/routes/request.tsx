@@ -12,8 +12,7 @@ request.post('/', async (c) => {
     const method = body.method as string;
     const payloadStr = body.pocket_payload as string;
 
-    // 1. 프론트엔드에서 묶어 보낸 Alpine.js 상태 파싱
-    // payload가 없으면 기본 빈 객체로 fallback 처리
+    // 1. 프론트엔드에서 묶어 보낸 Alpine.js 상태 파싱 (안전장치 포함)
     const payload = payloadStr
       ? JSON.parse(payloadStr)
       : { params: [], headers: [], bodyType: 'none', bodyContent: '' };
@@ -26,7 +25,7 @@ request.post('/', async (c) => {
         urlObj.searchParams.append(p.key.trim(), p.value);
       }
     });
-    const finalUrl = urlObj.toString(); // 쿼리스트링이 완벽하게 붙은 최종 URL
+    const finalUrl = urlObj.toString(); // 파라미터가 완벽하게 붙은 최종 URL
 
     // 3. Request Headers 세팅
     const fetchHeaders = new Headers();
@@ -36,7 +35,7 @@ request.post('/', async (c) => {
       }
     });
 
-    // 4. Request Body 세팅 (GET 요청 등은 Body를 가질 수 없음)
+    // 4. Request Body 세팅 (GET 요청 등은 Body를 무시함)
     let fetchBody: string | undefined = undefined;
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
       if (payload.bodyType === 'json' && payload.bodyContent.trim() !== '') {
@@ -59,27 +58,42 @@ request.post('/', async (c) => {
 
     const response = await fetch(finalUrl, fetchOptions);
 
-    // 응답 데이터 파싱 (JSON인지 Text인지 확인)
+    // 💡 6. 응답 헤더 추출 (ResultCard에 넘겨주기 위해 일반 객체로 변환)
+    const headersObj: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      headersObj[key] = value;
+    });
+
+    // 7. 응답 데이터 파싱 (JSON인지 Text인지 확인)
     const isJson = response.headers.get('content-type')?.includes('application/json');
     const responseData = isJson ? await response.json() : await response.text();
     const duration = Date.now() - startTime;
 
-    // 6. 스냅샷 저장 (최종 조립된 URL을 저장하는 게 디버깅에 좋음)
+    // 8. 스냅샷 저장 (최종 조립된 URL을 저장하는 게 디버깅에 좋음)
     const { filename } = saveSnapshot({
       url: finalUrl,
       method,
       status: response.status,
       duration,
       data: responseData,
+      headers: headersObj, // 💡 응답 헤더도 스냅샷에 저장
     });
 
-    // 7. 사이드바 실시간 갱신 신호 발송
+    // 9. 사이드바 실시간 갱신 신호 발송
     c.header('HX-Trigger', 'snapshotUpdated');
 
-    // 8. 성공 UI 카드 렌더링
-    return c.html(<SuccessCard duration={duration} filename={filename} data={responseData} />);
+    // 10. 성공 UI 카드 렌더링 (업그레이드된 속성들 포함)
+    return c.html(
+      <SuccessCard
+        duration={duration}
+        filename={filename}
+        data={responseData}
+        status={response.status}
+        responseHeaders={headersObj}
+      />,
+    );
   } catch (err: any) {
-    // URL 파싱 에러나 네트워크 에러 발생 시 UI 조각 리턴
+    // URL 파싱 에러나 네트워크 에러 등 발생 시 에러 UI 조각 리턴
     return c.html(<ErrorCard message={err.message || String(err)} />);
   }
 });
