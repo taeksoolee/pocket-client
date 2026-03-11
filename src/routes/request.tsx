@@ -29,10 +29,14 @@ request.post('/', async (c) => {
       data,
     });
 
+    // 💡 [핵심] 성공적으로 저장되었다면 사이드바에 신호를 보냄
+    // HTMX는 이 헤더를 읽어서 브라우저에서 'snapshotUpdated' 이벤트를 발생시킵니다.
+    c.header('HX-Trigger', 'snapshotUpdated');
+
     // 3. 성공 UI 조각(Partial) 리턴
     return c.html(<SuccessCard duration={duration} filename={filename} data={data} />);
   } catch (err: any) {
-    // 4. 에러 UI 조각 리턴
+    // 4. 에러 UI 조각 리턴 (에러 시에는 신호를 보내지 않음)
     return c.html(<ErrorCard message={err.message || String(err)} />);
   }
 });
