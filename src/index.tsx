@@ -1,7 +1,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
-import { workspaceDir } from './config';
+import { config, workspaceDir } from './config';
 import homeRoute from './routes/home';
 import requestRoute from './routes/request';
 import snapshots from './routes/snapshots';
@@ -14,8 +14,13 @@ app.route('/request', requestRoute);
 app.route('/snapshots', snapshots);
 
 // 2. 서버 실행
-serve({ fetch: app.fetch, port: 3000 }, (info) => {
-  console.log(`\n🚀 PocketClient is running!`);
+serve({ fetch: app.fetch, port: config.port }, (info) => {
+  const loadedEnv = (config as any).loadedEnv ? ` [Env: ${(config as any).loadedEnv}]` : '';
+
+  console.log(`\n🚀 Pocket Client is running!${loadedEnv}`);
   console.log(`🔗 Local: http://localhost:${info.port}`);
-  console.log(`📁 Workspace: ${workspaceDir}\n`);
+  console.log(`📁 Workspace: ${workspaceDir}`);
+  console.log(
+    `⚙️  Config: Port ${config.port}, Global Headers: ${Object.keys(config.globalHeaders).length} items\n`,
+  );
 });
