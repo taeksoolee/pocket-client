@@ -15,7 +15,7 @@ app.route('/snapshots', snapshots);
 
 // 2. 서버 실행
 serve({ fetch: app.fetch, port: 3000 }, (info) => {
-  console.log(`\n🚀 PocketAPI is running!`);
+  console.log(`\n🚀 PocketClient is running!`);
   console.log(`🔗 Local: http://localhost:${info.port}`);
   console.log(`📁 Workspace: ${workspaceDir}\n`);
 });

@@ -11,7 +11,7 @@ export const Home = ({ files }: { files: string[] }) => (
       <div class="max-w-4xl mx-auto">
         <header class="mb-8">
           <h1 class="text-3xl font-bold text-indigo-600">Pocket Client 🚀</h1>
-          <p class="text-slate-500">Embedded Local-first API Tool</p>
+          <p class="text-slate-500">Embedded Local-first Http Client Tool</p>
         </header>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">

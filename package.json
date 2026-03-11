@@ -1,5 +1,5 @@
 {
-  "name": "pocket-api",
+  "name": "pocket-client",
   "version": "1.0.0",
   "description": "Embedded API Workspace for Real Engineers.",
   "type": "module",

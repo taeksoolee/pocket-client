@@ -5,7 +5,7 @@ export const Layout = ({ children }: { children: any }) => (
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>PocketAPI Workspace</title>
+      <title>PocketClient Workspace</title>
       <script dangerouslySetInnerHTML={{ __html: HTMX_LIB }}></script>
       <script defer dangerouslySetInnerHTML={{ __html: ALPINE_LIB }}></script>
       {/* 💡 CDN 대신 빌드된 CSS를 직접 주입! 오프라인 완벽 대응 */}
