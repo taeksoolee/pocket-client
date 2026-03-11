@@ -14,7 +14,7 @@ export const SuccessCard = ({
   filename,
   request,
   response,
-  timestamp, // 💡 전달받은 타임스탬프
+  timestamp,
 }: {
   filename?: string;
   request: SnapshotRequest;
@@ -43,7 +43,7 @@ export const SuccessCard = ({
         }
       }"
     >
-      {/* 1. 상단 헤더: 기술적 지표 위주 */}
+      {/* 1. 상단 헤더 */}
       <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
           <span
@@ -72,7 +72,7 @@ export const SuccessCard = ({
         )}
       </div>
 
-      {/* 2. URL 및 요청시간 라인: flex로 양끝 배치 */}
+      {/* 2. URL 및 요청시간 라인 */}
       <div class="px-4 py-2 bg-white border-b border-slate-100 text-[11px] font-mono text-slate-500 flex justify-between items-center gap-4">
         <div class="truncate" title={request.url}>
           🌐 {request.url}
@@ -85,27 +85,26 @@ export const SuccessCard = ({
         )}
       </div>
 
+      {/* 3. 탭 네비게이션 */}
       <div class="flex border-b border-slate-200 text-xs font-medium bg-slate-50/50 overflow-x-auto">
         {['res-body', 'res-headers', 'req-headers', 'req-body'].map((tab) => (
           <button
             type="button"
             x-on:click={`activeTab = '${tab}'`}
             x-bind:class={`activeTab === '${tab}' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'text-slate-500 hover:text-slate-800'`}
-            class="px-5 py-2.5 whitespace-nowrap capitalize"
+            class="px-5 py-2.5 whitespace-nowrap capitalize transition-all"
           >
             {tab.replace('-', ' ')}
           </button>
         ))}
       </div>
 
+      {/* 4. 컨텐츠 영역 */}
       <div class="p-4 bg-slate-900 text-slate-300 font-mono text-sm overflow-auto max-h-[600px] flex-1">
         <div x-show="activeTab === 'res-body'">
-          {filename && (
-            <div class="mb-3 text-slate-500 text-xs">
-              📄 Saved at: ./{basename(workspaceDir)}/results/{filename}
-            </div>
-          )}
-          <pre id="res-json">{dataString}</pre>
+          <pre id="res-json" class="leading-relaxed">
+            {dataString}
+          </pre>
         </div>
         <div x-show="activeTab === 'res-headers'" style="display: none;">
           <table class="w-full text-left border-collapse">
@@ -132,9 +131,27 @@ export const SuccessCard = ({
           </table>
         </div>
         <div x-show="activeTab === 'req-body'" style="display: none;">
-          <pre>{request.body || 'No request body.'}</pre>
+          <pre class="leading-relaxed">{request.body || 'No request body.'}</pre>
         </div>
       </div>
+
+      {/* 5. 💡 하단 푸터: 파일 경로 정보 (IDE 상태바 스타일) */}
+      {filename && (
+        <div class="px-4 py-1.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+          <div class="flex items-center gap-1.5">
+            <span class="text-slate-300">📁</span>
+            <span class="font-sans uppercase font-bold text-slate-500 tracking-tighter">
+              Snapshot Path:
+            </span>
+            <span class="bg-slate-200/50 px-1.5 py-0.5 rounded text-slate-500">
+              ./{basename(workspaceDir)}/results/{filename}
+            </span>
+          </div>
+          <div class="text-[9px] uppercase font-bold tracking-widest text-slate-300">
+            Local Persistence Active
+          </div>
+        </div>
+      )}
     </div>
   );
 };
