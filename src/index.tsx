@@ -112,7 +112,7 @@ app.post('/request', async (c) => {
         duration_ms: duration,
         timestamp: new Date().toISOString(),
       },
-      data: data,
+      data,
     };
     writeFileSync(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
 
