@@ -24,12 +24,53 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
               headers: [{ key: '', value: '', active: true }],
               bodyType: 'none',
               bodyContent: '',
+              method: 'GET',
               url: '',
               baseUrl: '${config.baseUrl || ''}',
               allSuggestions: ${JSON.stringify([...(config.commonEndpoints || []), ...suggestions])},
               showSuggestions: false,
 
-              // 💡 선언적 바인딩 객체
+              // 💡 폼 복원 이벤트 리스너가 포함된 바인딩 객체
+              get formControl() {
+                return {
+                  ['x-on:fill-request-form.window']($event) {
+                    const data = $event.detail;
+                    this.method = data.method;
+                    this.bodyContent = data.body || '';
+                    this.bodyType = data.body ? 'json' : 'none';
+
+                    // 1. URL 및 Params 복원 로직
+                    try {
+                      const urlObj = new URL(data.url);
+                      // baseUrl로 시작하면 경로만 남김
+                      if (this.baseUrl && data.url.startsWith(this.baseUrl)) {
+                        this.url = urlObj.pathname;
+                      } else {
+                        this.url = data.url.split('?')[0];
+                      }
+                      
+                      // 쿼리 파라미터 파싱해서 리스트화
+                      const searchParams = Array.from(urlObj.searchParams.entries());
+                      if (searchParams.length > 0) {
+                        this.params = searchParams.map(([key, value]) => ({ key, value, active: true }));
+                      } else {
+                        this.params = [{ key: '', value: '', active: true }];
+                      }
+                    } catch(e) {
+                      this.url = data.url;
+                    }
+
+                    // 2. Headers 복원
+                    const headerEntries = Object.entries(data.headers || {});
+                    if (headerEntries.length > 0) {
+                      this.headers = headerEntries.map(([key, value]) => ({ key, value: String(value), active: true }));
+                    } else {
+                      this.headers = [{ key: '', value: '', active: true }];
+                    }
+                  }
+                }
+              },
+
               get suggestionContainer() { return { ['x-on:click.outside']() { this.showSuggestions = false } } },
               get urlInput() {
                 return {
@@ -51,9 +92,9 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
               addRow(type) { this[type].push({ key: '', value: '', active: true }) },
               removeRow(type, index) { this[type].splice(index, 1) }
             }`}
+            x-bind="formControl"
           >
             <div class="space-y-2">
-              {/* 💡 BaseURL 인디케이터 영역 (config.baseUrl이 있을 때만 노출) */}
               {config.baseUrl && (
                 <div class="flex items-center px-0.5">
                   <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-[10px] font-black text-indigo-600 uppercase tracking-wider shadow-sm">
@@ -64,10 +105,10 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 </div>
               )}
 
-              {/* URL 입력 바 */}
               <div class="flex gap-4">
                 <select
                   name="method"
+                  x-model="method"
                   class="border border-slate-300 rounded-lg px-4 py-2 bg-slate-50 font-bold outline-none focus:border-indigo-500"
                 >
                   {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((m) => (
@@ -89,7 +130,6 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                     }
                   />
 
-                  {/* 자동완성 드롭다운 */}
                   <div
                     x-show="showSuggestions && filteredSuggestions.length > 0"
                     class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto"
@@ -113,7 +153,6 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 </button>
               </div>
 
-              {/* Target URL 프리뷰 */}
               <div
                 x-show="url.startsWith('/') && baseUrl"
                 class="text-[10px] font-mono text-slate-400 pl-32 truncate italic"
@@ -124,7 +163,6 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
               </div>
             </div>
 
-            {/* 탭 네비게이션 */}
             <div class="flex border-b border-slate-200 text-sm font-medium mt-6">
               {['params', 'headers', 'body'].map((tab) => (
                 <button
@@ -138,9 +176,8 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
               ))}
             </div>
 
-            {/* 탭 컨텐츠 */}
             <div class="bg-slate-50/50 p-4 rounded-b-lg border-x border-b border-slate-200 min-h-[150px]">
-              {/* 🎯 Params */}
+              {/* Params 탭 */}
               <div x-show="activeTab === 'params'" class="space-y-2">
                 <template x-for="(item, index) in params" x-bind:key="index">
                   <div class="flex gap-2 items-center">
@@ -188,7 +225,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 </button>
               </div>
 
-              {/* 🎯 Headers */}
+              {/* Headers 탭 */}
               <div x-show="activeTab === 'headers'" class="space-y-2" style="display: none;">
                 <template x-for="(item, index) in headers" x-bind:key="index">
                   <div class="flex gap-2 items-center">
@@ -236,7 +273,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 </button>
               </div>
 
-              {/* 🎯 Body */}
+              {/* Body 탭 */}
               <div x-show="activeTab === 'body'" style="display: none;">
                 <div class="flex gap-4 mb-3 text-xs font-bold text-slate-500 uppercase">
                   <label class="flex items-center gap-1 cursor-pointer">
@@ -249,13 +286,9 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
                 <div x-show="bodyType === 'json'">
                   <textarea
                     x-model="bodyContent"
-                    class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:border-indigo-500 bg-white shadow-inner"
+                    class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:border-indigo-500 bg-white"
                     rows={6}
-                    placeholder='{\n  "hello": "world"\n}'
                   ></textarea>
-                </div>
-                <div x-show="bodyType === 'none'" class="text-slate-400 text-xs italic py-4">
-                  This request does not have a body.
                 </div>
               </div>
             </div>
@@ -267,11 +300,7 @@ export const Home = ({ files, suggestions = [] }: { files: string[]; suggestions
             />
           </form>
         </div>
-        <div id="result">
-          <div class="text-center text-slate-400 py-10 border-2 border-dashed border-slate-200 rounded-xl">
-            🚀 URL을 입력하고 Send를 눌러보세요.
-          </div>
-        </div>
+        <div id="result"></div>
       </div>
     </main>
   </Layout>

@@ -13,7 +13,7 @@ snapshots.get('/:filename', (c) => {
     return c.html(<div class="p-4 text-red-500">파일을 찾을 수 없습니다.</div>);
   }
 
-  // 💡 하위 호환성 (구버전 meta 구조를 신버전 request/response 구조로 매핑)
+  // 💡 데이터 매핑 (하위 호환성 유지)
   let requestData = snapshot.request;
   let responseData = snapshot.response;
 
@@ -32,14 +32,27 @@ snapshots.get('/:filename', (c) => {
     };
   }
 
-  // 💡 저장된 ISO 타임스탬프를 읽기 좋은 포맷으로 변환
+  // 타임스탬프 포맷팅
   let formattedTimestamp = '';
   if (snapshot.timestamp) {
     const d = new Date(snapshot.timestamp);
     formattedTimestamp = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
   }
 
-  // 💡 메인 뷰에서 만든 SuccessCard를 그대로 재사용! (timestamp 추가)
+  // 💡 핵심: 폼을 채우기 위한 이벤트를 발생시킴.
+  // 요청 데이터를 그대로 'fill-request-form' 이벤트에 담아서 보냄.
+  c.header(
+    'HX-Trigger',
+    JSON.stringify({
+      'fill-request-form': {
+        method: requestData.method,
+        url: requestData.url,
+        headers: requestData.headers,
+        body: requestData.body,
+      },
+    }),
+  );
+
   return c.html(
     <SuccessCard
       filename={filename}
