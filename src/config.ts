@@ -19,6 +19,7 @@ const INTERNAL_DEFAULT: PocketConfig = {
   port: 3000,
   globalHeaders: {},
   commonEndpoints: [],
+  timeout: 10000, // 💡 기본 타임아웃 10초 추가
 };
 
 function loadConfig(): PocketConfig {

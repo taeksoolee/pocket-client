@@ -7,6 +7,11 @@ import { saveSnapshot } from '../utils/snapshot';
 const request = new Hono();
 
 request.post('/', async (c) => {
+  // 💡 타임아웃 설정을 위한 AbortController 준비
+  const timeoutMs = config.timeout || 10000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const body = await c.req.parseBody();
     let rawUrl = body.url as string;
@@ -54,7 +59,18 @@ request.post('/', async (c) => {
     }
 
     const startTime = Date.now();
-    const response = await fetch(finalUrl, { method, headers: fetchHeaders, body: fetchBody });
+
+    // 💡 fetch에 signal을 전달하여 타임아웃 감시
+    const response = await fetch(finalUrl, {
+      method,
+      headers: fetchHeaders,
+      body: fetchBody,
+      signal: controller.signal,
+    });
+
+    // 💡 요청 성공 시 타이머 해제
+    clearTimeout(timeoutId);
+
     const resHeadersObj: Record<string, string> = {};
     response.headers.forEach((v, k) => {
       resHeadersObj[k] = v;
@@ -78,6 +94,18 @@ request.post('/', async (c) => {
       <SuccessCard filename={filename} request={requestData} response={responseDataObj} />,
     );
   } catch (err: any) {
+    // 💡 에러 발생 시 타이머 해제
+    clearTimeout(timeoutId);
+
+    // 💡 타임아웃 에러(AbortError)인 경우 별도 메시지 처리 (B안: 스냅샷 저장 안 함)
+    if (err.name === 'AbortError') {
+      return c.html(
+        <ErrorCard
+          message={`⏱️ 요청 시간 초과: ${timeoutMs}ms 동안 응답이 없어 중단되었습니다.`}
+        />,
+      );
+    }
+
     return c.html(<ErrorCard message={err.message || String(err)} />);
   }
 });

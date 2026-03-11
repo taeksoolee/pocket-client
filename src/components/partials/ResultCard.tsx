@@ -25,7 +25,6 @@ export const SuccessCard = ({
   return (
     <div
       class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full animate-in fade-in duration-300"
-      /* 💡 핵심: 탭 상태뿐만 아니라 복사 상태(copied)와 복사 함수(copy)도 여기서 관리! */
       x-data="{ 
         activeTab: 'res-body',
         copied: false,
@@ -42,7 +41,6 @@ export const SuccessCard = ({
         }
       }"
     >
-      {/* 상단 헤더 */}
       <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
           <span
@@ -60,7 +58,6 @@ export const SuccessCard = ({
         </div>
 
         {filename && (
-          /* 💡 x-on:click으로 내부 함수 호출, x-bind:class와 x-text로 상태에 따른 UI 자동 변경 */
           <button
             type="button"
             x-on:click="copy('res-json')"
@@ -79,45 +76,20 @@ export const SuccessCard = ({
         🌐 {request.url}
       </div>
 
-      {/* 4개의 탭 네비게이션 */}
       <div class="flex border-b border-slate-200 text-xs font-medium bg-slate-50/50 overflow-x-auto">
-        <button
-          type="button"
-          x-on:click="activeTab = 'res-body'"
-          x-bind:class="activeTab === 'res-body' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'text-slate-500 hover:text-slate-800'"
-          class="px-5 py-2.5 whitespace-nowrap"
-        >
-          Res Body
-        </button>
-        <button
-          type="button"
-          x-on:click="activeTab = 'res-headers'"
-          x-bind:class="activeTab === 'res-headers' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'text-slate-500 hover:text-slate-800'"
-          class="px-5 py-2.5 whitespace-nowrap"
-        >
-          Res Headers
-        </button>
-        <button
-          type="button"
-          x-on:click="activeTab = 'req-headers'"
-          x-bind:class="activeTab === 'req-headers' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'text-slate-500 hover:text-slate-800'"
-          class="px-5 py-2.5 whitespace-nowrap"
-        >
-          Req Headers
-        </button>
-        <button
-          type="button"
-          x-on:click="activeTab = 'req-body'"
-          x-bind:class="activeTab === 'req-body' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'text-slate-500 hover:text-slate-800'"
-          class="px-5 py-2.5 whitespace-nowrap"
-        >
-          Req Body
-        </button>
+        {['res-body', 'res-headers', 'req-headers', 'req-body'].map((tab) => (
+          <button
+            type="button"
+            x-on:click={`activeTab = '${tab}'`}
+            x-bind:class={`activeTab === '${tab}' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'text-slate-500 hover:text-slate-800'`}
+            class="px-5 py-2.5 whitespace-nowrap capitalize"
+          >
+            {tab.replace('-', ' ')}
+          </button>
+        ))}
       </div>
 
-      {/* 컨텐츠 영역 */}
       <div class="p-4 bg-slate-900 text-slate-300 font-mono text-sm overflow-auto max-h-[600px] flex-1">
-        {/* 1. Res Body */}
         <div x-show="activeTab === 'res-body'">
           {filename && (
             <div class="mb-3 text-slate-500 text-xs">
@@ -126,8 +98,6 @@ export const SuccessCard = ({
           )}
           <pre id="res-json">{dataString}</pre>
         </div>
-
-        {/* 2. Res Headers */}
         <div x-show="activeTab === 'res-headers'" style="display: none;">
           <table class="w-full text-left border-collapse">
             <tbody>
@@ -140,32 +110,20 @@ export const SuccessCard = ({
             </tbody>
           </table>
         </div>
-
-        {/* 3. Req Headers */}
         <div x-show="activeTab === 'req-headers'" style="display: none;">
-          {Object.keys(request.headers).length === 0 ? (
-            <div class="text-slate-500 italic">No request headers.</div>
-          ) : (
-            <table class="w-full text-left border-collapse">
-              <tbody>
-                {Object.entries(request.headers).map(([key, value]) => (
-                  <tr class="border-b border-slate-800">
-                    <td class="py-2 pr-4 text-emerald-400 font-semibold">{key}</td>
-                    <td class="py-2 text-slate-300 break-all">{value as string}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <table class="w-full text-left border-collapse">
+            <tbody>
+              {Object.entries(request.headers).map(([key, value]) => (
+                <tr class="border-b border-slate-800">
+                  <td class="py-2 pr-4 text-emerald-400 font-semibold">{key}</td>
+                  <td class="py-2 text-slate-300 break-all">{value as string}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        {/* 4. Req Body */}
         <div x-show="activeTab === 'req-body'" style="display: none;">
-          {request.body ? (
-            <pre>{request.body}</pre>
-          ) : (
-            <div class="text-slate-500 italic">No request body.</div>
-          )}
+          <pre>{request.body || 'No request body.'}</pre>
         </div>
       </div>
     </div>
@@ -173,7 +131,6 @@ export const SuccessCard = ({
 };
 
 export const ErrorCard = ({ message }: { message: string }) => (
-  // 기존 에러 카드 유지
   <div class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 animate-in fade-in">
     <div class="font-bold mb-1 flex items-center gap-2">
       <span class="text-xl">🚨</span> 요청 실패
