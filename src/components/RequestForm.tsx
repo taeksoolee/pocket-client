@@ -339,7 +339,7 @@ export const RequestForm = ({
         </div>
 
         {/* === 탭 UI === */}
-        <div class="flex justify-between items-center border-b border-slate-200 mt-6">
+        <div class="flex justify-between items-center border-b border-slate-200 mt-6 mb-0">
           <div class="flex text-sm font-medium">
             {['params', 'headers', 'body'].map((tab) => (
               <button
