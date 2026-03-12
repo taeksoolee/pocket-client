@@ -82,8 +82,8 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
     x-data={`{ 
       activeTab: 'snapshots',
       activeFile: '',
-      width: parseInt(localStorage.getItem('sidebar-width')) || 256,
-      minW: 200,
+      width: parseInt(localStorage.getItem('sidebar-width')) || 280,
+      minW: 280,
       maxW: 600,
       isResizing: false,
 
@@ -132,7 +132,7 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
           x-bind:class="activeTab === 'snapshots' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
           class="text-xs uppercase tracking-wider transition-colors"
         >
-          🕒 History
+          🕒 Snapshorts
         </button>
         <span class="text-slate-600">|</span>
         <button
@@ -140,7 +140,7 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
           x-bind:class="activeTab === 'templates' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
           class="text-xs uppercase tracking-wider transition-colors"
         >
-          💾 Saved
+          💾 Templates
         </button>
       </div>
     </div>
