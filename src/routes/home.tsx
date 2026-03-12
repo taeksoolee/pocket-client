@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import { Hono } from 'hono';
 
 import { Home } from '../components/Home';
-import { SidebarList } from '../components/Sidebar';
-import { functionsDir } from '../config'; // 💡 경로 추가
+// 💡 수정: SidebarList 대신 Sidebar 컴포넌트 전체를 가져옵니다.
+import { Sidebar } from '../components/Sidebar';
+import { functionsDir, templatesDir } from '../config';
 import { getSnapshots, getURLSuggestions } from '../utils/snapshot';
 
 const home = new Hono();
@@ -24,12 +25,32 @@ home.get('/', (c) => {
     });
   }
 
-  return c.html(<Home files={files} suggestions={suggestions} functionsMap={functionsMap} />);
+  // 💡 템플릿 파일 목록 읽어오기
+  const templates = existsSync(templatesDir)
+    ? readdirSync(templatesDir).filter((f) => f.endsWith('.json'))
+    : [];
+
+  return c.html(
+    <Home
+      snapshots={files}
+      templates={templates}
+      suggestions={suggestions}
+      functionsMap={functionsMap}
+    />,
+  );
 });
 
+// 💡 HTMX가 사이드바 "전체" 갱신을 위해 호출하는 엔드포인트
 home.get('/sidebar', (c) => {
   const files = getSnapshots();
-  return c.html(<SidebarList files={files} />);
+
+  // 💡 추가: 사이드바 전체를 그리려면 템플릿 목록도 필요하므로 다시 읽어옵니다.
+  const templates = existsSync(templatesDir)
+    ? readdirSync(templatesDir).filter((f) => f.endsWith('.json'))
+    : [];
+
+  // 🚨 핵심 수정: 알맹이(SidebarList)가 아니라 뼈대(Sidebar) 전체를 반환합니다.
+  return c.html(<Sidebar snapshots={files} templates={templates} />);
 });
 
 export default home;

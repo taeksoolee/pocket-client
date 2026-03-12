@@ -9,12 +9,15 @@ export interface PocketConfig {
   baseUrl?: string; // 기본 API 도메인
   commonEndpoints?: string[]; // 자주 쓰는 엔드포인트 수동 설정
   timeout?: number;
+  loadedEnv?: string;
 }
 
 const __filename = fileURLToPath(import.meta.url);
 export const workspaceDir = dirname(__filename);
-// 💡 커스텀 함수 디렉토리 경로 정의
+
+// 💡 디렉토리 경로 정의 (templatesDir 추가)
 export const functionsDir = join(workspaceDir, 'functions');
+export const templatesDir = join(workspaceDir, 'templates');
 
 // 기본 내부 설정 (Fallback)
 const INTERNAL_DEFAULT: PocketConfig = {
@@ -42,8 +45,13 @@ function loadConfig(): PocketConfig {
       const envPath = join(configDir, `${env}.json`);
       if (existsSync(envPath)) {
         const envData = JSON.parse(readFileSync(envPath, 'utf-8'));
-        finalConfig = { ...finalConfig, ...envData };
-        (finalConfig as any).loadedEnv = env;
+        finalConfig = {
+          ...finalConfig,
+          ...envData,
+          // 💡 globalHeaders는 날아가지 않도록 깊은 병합 처리
+          globalHeaders: { ...(finalConfig.globalHeaders || {}), ...(envData.globalHeaders || {}) },
+          loadedEnv: env, // 💡 현재 로드된 환경 정보 추가
+        };
       }
     }
   } catch (err) {

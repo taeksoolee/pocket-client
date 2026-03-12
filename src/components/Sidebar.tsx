@@ -1,30 +1,53 @@
-export const SidebarList = ({ files }: { files: string[] }) => (
-  <ul id="snapshot-list" class="space-y-1">
-    {files.length === 0 ? (
+export const SidebarList = ({
+  items,
+  type,
+}: {
+  items: string[];
+  type: 'snapshots' | 'templates';
+}) => (
+  <ul id={`${type}-list`} class="space-y-1">
+    {items.length === 0 ? (
       <div class="text-sm text-slate-500 p-4 text-center border border-dashed border-slate-600 rounded-lg mt-2">
-        아직 스냅샷이 없습니다.
+        {type === 'snapshots' ? '아직 스냅샷이 없습니다.' : '저장된 템플릿이 없습니다.'}
       </div>
     ) : (
-      files.map((file) => (
+      items.map((item) => (
         <li
-          x-bind:class={`activeFile === '${file}' ? 'bg-slate-700 ring-1 ring-slate-600' : 'hover:bg-slate-700'`}
+          x-bind:class={`activeFile === '${item}' ? 'bg-slate-700 ring-1 ring-slate-600' : 'hover:bg-slate-700'`}
           class="group flex items-center rounded transition-colors animate-in slide-in-from-left-2 duration-200"
         >
-          <button
-            hx-get={`/snapshots/${file}`}
-            hx-target="#result"
-            x-on:click={`activeFile = '${file}'`}
-            x-bind:class={`activeFile === '${file}' ? 'text-indigo-300 font-bold' : 'text-slate-300 hover:text-indigo-300'`}
-            class="flex-1 text-left px-3 py-2 text-[11px] font-mono truncate outline-none"
-            title={file}
-          >
-            {file}
-          </button>
+          {type === 'snapshots' ? (
+            <button
+              hx-get={`/snapshots/${item}`}
+              hx-target="#result"
+              x-on:click={`activeFile = '${item}'`}
+              x-bind:class={`activeFile === '${item}' ? 'text-indigo-300 font-bold' : 'text-slate-300 hover:text-indigo-300'`}
+              class="flex-1 text-left px-3 py-2 text-[11px] font-mono truncate outline-none"
+              title={item}
+            >
+              {item}
+            </button>
+          ) : (
+            <button
+              x-on:click={`
+                activeFile = '${item}';
+                fetch('/templates/${item}')
+                  .then(res => res.json())
+                  .then(data => $dispatch('fill-template-form', data))
+              `}
+              x-bind:class={`activeFile === '${item}' ? 'text-indigo-300 font-bold' : 'text-slate-300 hover:text-indigo-300'`}
+              class="flex-1 text-left px-3 py-2 text-[11px] font-mono truncate outline-none"
+              title={item}
+            >
+              {item}
+            </button>
+          )}
 
           <button
-            hx-delete={`/snapshots/${file}`}
-            hx-confirm={`'${file}' 스냅샷을 삭제하시겠습니까?`}
-            hx-target="#result"
+            hx-delete={`/${type}/${item}`}
+            hx-confirm={`'${item}' 을(를) 삭제하시겠습니까?`}
+            // 💡 템플릿 삭제 후 사이드바 갱신 이벤트를 트리거 (HTMX 방식)
+            hx-target={type === 'snapshots' ? '#result' : null}
             class="opacity-0 group-hover:opacity-100 p-2 mr-1 text-slate-500 hover:text-red-400 transition-all hover:scale-110"
             title="삭제"
           >
@@ -52,12 +75,19 @@ export const SidebarList = ({ files }: { files: string[] }) => (
   </ul>
 );
 
-export const Sidebar = ({ files }: { files: string[] }) => (
+export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templates: string[] }) => (
   <aside
+    id="sidebar" // 💡 HTMX 갱신 타겟 지정
+    // 💡 템플릿이 업데이트되면 서버에서 전체 사이드바를 다시 받아와서 스스로 교체함
+    hx-get="/sidebar"
+    hx-trigger="templates-updated from:body"
+    hx-target="#sidebar"
+    hx-swap="outerHTML"
     x-bind:style="`width: ${width}px`"
     x-bind:class="isResizing ? 'select-none transition-none' : 'transition-[width] duration-75'"
     class="relative bg-slate-800 text-slate-300 h-screen flex-shrink-0 flex flex-col border-r border-slate-700"
     x-data={`{ 
+      activeTab: 'snapshots', 
       activeFile: '',
       width: parseInt(localStorage.getItem('sidebar-width')) || 256,
       minW: 200,
@@ -75,12 +105,17 @@ export const Sidebar = ({ files }: { files: string[] }) => (
             }, 1000);
           },
           ['x-on:snapshot-updated.window']($event) {
-            if($event.detail.filename) this.activeFile = decodeURIComponent($event.detail.filename);
+            if($event.detail.filename) {
+              this.activeTab = 'snapshots';
+              this.activeFile = decodeURIComponent($event.detail.filename);
+              // 스냅샷 업데이트 시에도 사이드바 자체 갱신 트리거 (htmx에 위임)
+              htmx.trigger('#sidebar', 'templates-updated'); 
+            }
           }
+          // 💡 무식한 window.location.reload() 삭제됨!
         }
       },
 
-      // 💡 레이어 전용 바인딩 추가
       get functionLayer() {
         return {
           ['x-on:click.outside']() { this.showFunctions = false }
@@ -107,8 +142,26 @@ export const Sidebar = ({ files }: { files: string[] }) => (
     }`}
     x-bind="sidebarEvents"
   >
+    {/* 이하 레이아웃 코드는 기존과 동일 */}
     <div class="p-4 border-b border-slate-700 bg-slate-800 z-10 flex-shrink-0 flex justify-between items-center">
-      <h2 class="text-sm font-bold text-slate-100 uppercase tracking-wider">📁 Snapshots</h2>
+      <div class="flex gap-2">
+        <button
+          x-on:click="activeTab = 'snapshots'"
+          x-bind:class="activeTab === 'snapshots' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
+          class="text-xs uppercase tracking-wider transition-colors"
+        >
+          🕒 History
+        </button>
+        <span class="text-slate-600">|</span>
+        <button
+          x-on:click="activeTab = 'templates'"
+          x-bind:class="activeTab === 'templates' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
+          class="text-xs uppercase tracking-wider transition-colors"
+        >
+          💾 Saved
+        </button>
+      </div>
+
       <button
         x-on:click="showFunctions = !showFunctions"
         x-bind:class="showFunctions ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-700 text-slate-300 border-slate-600 hover:text-white hover:bg-slate-600'"
@@ -119,7 +172,6 @@ export const Sidebar = ({ files }: { files: string[] }) => (
       </button>
     </div>
 
-    {/* 💡 x-bind="functionLayer"로 바인딩 처리 */}
     <div
       x-show="showFunctions"
       x-bind="functionLayer"
@@ -159,8 +211,13 @@ export const Sidebar = ({ files }: { files: string[] }) => (
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
-      <SidebarList files={files} />
+    <div class="flex-1 overflow-y-auto p-2 custom-scrollbar relative">
+      <div x-show="activeTab === 'snapshots'">
+        <SidebarList items={snapshots} type="snapshots" />
+      </div>
+      <div x-show="activeTab === 'templates'" style="display: none;">
+        <SidebarList items={templates} type="templates" />
+      </div>
     </div>
 
     <div
