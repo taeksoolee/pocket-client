@@ -75,6 +75,7 @@ export const Home = ({
                     try {
                       // 스크립트 내에서 폼 상태를 제어할 수 있도록 주입되는 API 메서드 컨텍스트
                       const pocket = {
+                        config: ${JSON.stringify(config)},
                         setHeader: (key, value) => {
                           const existing = this.headers.find(h => h.key.toLowerCase() === key.toLowerCase());
                           if (existing) { existing.value = value; existing.active = true; }
