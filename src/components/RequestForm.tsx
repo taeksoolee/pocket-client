@@ -1,10 +1,11 @@
 import { config } from '../config';
+import type { RequestRow } from '../types';
 
 export const RequestForm = ({
   initialHeaders,
   uniqueSuggestions,
 }: {
-  initialHeaders: any[];
+  initialHeaders: RequestRow[];
   uniqueSuggestions: string[];
 }) => (
   <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">

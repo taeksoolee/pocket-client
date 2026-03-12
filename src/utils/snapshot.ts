@@ -14,7 +14,13 @@ export interface SnapshotResponse {
   status: number;
   duration: number;
   headers: Record<string, string>;
-  data: any;
+  data: unknown;
+}
+
+export interface Snapshot {
+  timestamp: string;
+  request: SnapshotRequest;
+  response: SnapshotResponse;
 }
 
 export interface SnapshotParams {
@@ -45,7 +51,7 @@ export function saveSnapshot(params: SnapshotParams) {
   const filename = `${formattedDate}_${params.request.method}_${safeUrl}.json`;
   const filePath = path.join(snapshortsDir, filename);
 
-  const snapshot = {
+  const snapshot: Snapshot = {
     timestamp: timestamp.toISOString(),
     request: params.request,
     response: params.response,
@@ -73,7 +79,7 @@ export function getURLSuggestions(): string[] {
   files.forEach((file) => {
     try {
       const content = fs.readFileSync(path.join(snapshortsDir, file), 'utf-8');
-      const data = JSON.parse(content);
+      const data = JSON.parse(content) as Snapshot;
       if (data.request?.url) {
         // 💡 자동완성 목록에 추가할 때도 한글 디코딩 적용
         const url = new URL(data.request.url);
@@ -87,11 +93,11 @@ export function getURLSuggestions(): string[] {
   return Array.from(paths);
 }
 
-export function getSnapshot(filename: string) {
+export function getSnapshot(filename: string): Snapshot | null {
   const filePath = path.join(workspaceDir, 'snapshorts', filename);
   if (!fs.existsSync(filePath)) return null;
   const content = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(content);
+  return JSON.parse(content) as Snapshot;
 }
 
 export function deleteSnapshot(filename: string) {

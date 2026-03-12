@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { ErrorCard } from '../components/partials/ErrorCard';
 import { SuccessCard } from '../components/partials/SuccessCard';
 import { config } from '../config';
+import type { RequestPayload, RequestRow } from '../types';
 import { saveSnapshot } from '../utils/snapshot';
 
 const request = new Hono();
@@ -26,12 +27,12 @@ request.post('/', async (c) => {
       rawUrl = `${base}/${path}`;
     }
 
-    const payload = payloadStr
+    const payload: RequestPayload = payloadStr
       ? JSON.parse(payloadStr)
       : { params: [], headers: [], bodyType: 'none', bodyContent: '' };
 
     const urlObj = new URL(rawUrl);
-    payload.params.forEach((p: any) => {
+    payload.params.forEach((p: RequestRow) => {
       if (p.active && p.key.trim() !== '') urlObj.searchParams.append(p.key.trim(), p.value);
     });
 
@@ -42,7 +43,7 @@ request.post('/', async (c) => {
     const reqHeadersObj: Record<string, string> = {};
 
     // UI(Home.tsx)에서 이미 기본 헤더를 포함해서 보냈으므로, payload.headers만 사용함.
-    payload.headers.forEach((h: any) => {
+    payload.headers.forEach((h: RequestRow) => {
       if (h.active && h.key.trim() !== '') {
         fetchHeaders.set(h.key.trim(), h.value);
         reqHeadersObj[h.key.trim()] = h.value;
@@ -114,12 +115,12 @@ request.post('/', async (c) => {
         timestamp={formattedTimestamp}
       />,
     );
-  } catch (err: any) {
+  } catch (err) {
     // 💡 에러 발생 시 타이머 해제
     clearTimeout(timeoutId);
 
     // 💡 타임아웃 에러(AbortError)인 경우 별도 메시지 처리
-    if (err.name === 'AbortError') {
+    if (err instanceof Error && err.name === 'AbortError') {
       return c.html(
         <ErrorCard
           message={`⏱️ 요청 시간 초과: ${timeoutMs}ms 동안 응답이 없어 중단되었습니다.`}
@@ -127,7 +128,7 @@ request.post('/', async (c) => {
       );
     }
 
-    return c.html(<ErrorCard message={err.message || String(err)} />);
+    return c.html(<ErrorCard message={err instanceof Error ? err.message : String(err)} />);
   }
 });
 

@@ -1,6 +1,8 @@
+import type { Child } from 'hono/jsx';
+
 import { ALPINE_LIB, HTMX_LIB, TAILWIND_CSS } from '../config';
 
-export const Layout = ({ children }: { children: any }) => (
+export const Layout = ({ children }: { children: Child }) => (
   <html lang="ko">
     <head>
       <meta charset="UTF-8" />
