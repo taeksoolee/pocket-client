@@ -292,6 +292,7 @@ export const RequestForm = ({
                 config.baseUrl ? '/api/v1 (baseUrl 자동결합)' : 'https://api.example.com'
               }
             />
+
             <div
               x-ref="suggestionBox"
               x-show="showSuggestions && filteredSuggestions.length > 0"
@@ -323,6 +324,18 @@ export const RequestForm = ({
           >
             Send
           </button>
+        </div>
+
+        {/* 🆕 URL Preview: 입력 행 아래로 이동하여 버튼 높이에 영향을 주지 않음 */}
+        <div
+          class="px-1 flex items-center gap-1.5 text-[10px] font-mono text-slate-400 overflow-hidden"
+          x-show="url.trim().length > 0"
+          style="display: none; margin-left: 120px;"
+        >
+          <span class="flex-shrink-0 text-indigo-500 font-black uppercase tracking-tighter">
+            Target:
+          </span>
+          <span class="truncate text-slate-500" x-text="resolvedUrl"></span>
         </div>
 
         {/* === 탭 UI === */}
