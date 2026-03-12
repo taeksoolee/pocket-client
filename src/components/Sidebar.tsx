@@ -46,7 +46,6 @@ export const SidebarList = ({
           <button
             hx-delete={`/${type}/${item}`}
             hx-confirm={`'${item}' 을(를) 삭제하시겠습니까?`}
-            // 💡 템플릿 삭제 후 사이드바 갱신 이벤트를 트리거 (HTMX 방식)
             hx-target={type === 'snapshots' ? '#result' : null}
             class="opacity-0 group-hover:opacity-100 p-2 mr-1 text-slate-500 hover:text-red-400 transition-all hover:scale-110"
             title="삭제"
@@ -77,17 +76,11 @@ export const SidebarList = ({
 
 export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templates: string[] }) => (
   <aside
-    id="sidebar" // 💡 HTMX 갱신 타겟 지정
-    // 💡 템플릿이 업데이트되면 서버에서 전체 사이드바를 다시 받아와서 스스로 교체함
-    hx-get="/sidebar"
-    hx-trigger="templates-updated from:body"
-    hx-target="#sidebar"
-    hx-swap="outerHTML"
     x-bind:style="`width: ${width}px`"
     x-bind:class="isResizing ? 'select-none transition-none' : 'transition-[width] duration-75'"
     class="relative bg-slate-800 text-slate-300 h-screen flex-shrink-0 flex flex-col border-r border-slate-700"
     x-data={`{ 
-      activeTab: 'snapshots', 
+      activeTab: 'snapshots',
       activeFile: '',
       width: parseInt(localStorage.getItem('sidebar-width')) || 256,
       minW: 200,
@@ -108,11 +101,12 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
             if($event.detail.filename) {
               this.activeTab = 'snapshots';
               this.activeFile = decodeURIComponent($event.detail.filename);
-              // 스냅샷 업데이트 시에도 사이드바 자체 갱신 트리거 (htmx에 위임)
-              htmx.trigger('#sidebar', 'templates-updated'); 
             }
+          },
+          ['x-on:template-saved.window']($event) {
+            this.activeTab = 'templates';
+            this.activeFile = $event.detail.filename;
           }
-          // 💡 무식한 window.location.reload() 삭제됨!
         }
       },
 
@@ -142,7 +136,6 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
     }`}
     x-bind="sidebarEvents"
   >
-    {/* 이하 레이아웃 코드는 기존과 동일 */}
     <div class="p-4 border-b border-slate-700 bg-slate-800 z-10 flex-shrink-0 flex justify-between items-center">
       <div class="flex gap-2">
         <button
@@ -211,7 +204,15 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-2 custom-scrollbar relative">
+    {/* 💡 알맹이(리스트) 영역만 HTMX로 갱신되도록 복구 완료 */}
+    <div
+      id="sidebar-lists"
+      hx-get="/sidebar"
+      hx-trigger="snapshot-updated from:body, templates-updated from:body"
+      hx-target="#sidebar-lists"
+      hx-swap="innerHTML"
+      class="flex-1 overflow-y-auto p-2 custom-scrollbar relative"
+    >
       <div x-show="activeTab === 'snapshots'">
         <SidebarList items={snapshots} type="snapshots" />
       </div>
@@ -220,6 +221,7 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
       </div>
     </div>
 
+    {/* 💡 삭제되었던 너비 조절(리사이즈) 바 복구 완료 */}
     <div
       x-on:mousedown="startResize($event)"
       class="absolute top-0 -right-[6px] bottom-0 w-4 group/resizer cursor-col-resize z-50 flex items-center justify-center"

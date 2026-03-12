@@ -33,7 +33,6 @@ export const Home = ({
         }}
       />
 
-      {/* 💡 Sidebar Props 수정 */}
       <Sidebar snapshots={snapshots} templates={templates} />
 
       <main class="flex-1 h-screen overflow-y-auto p-8 bg-slate-50 text-slate-800">
@@ -52,8 +51,8 @@ export const Home = ({
               hx-disabled-elt="button"
               class="space-y-4"
               x-data={`{
-                activeTab: 'params', // 'params' | 'headers' | 'body' | 'raw'
-                viewMode: 'gui', // 'gui' | 'raw'
+                activeTab: 'params',
+                viewMode: 'gui',
                 params: [{ key: '', value: '', active: true }],
                 headers: ${JSON.stringify(initialHeaders)},
                 bodyType: 'none',
@@ -65,13 +64,11 @@ export const Home = ({
                 showSuggestions: false,
                 selectedIndex: -1,
                 
-                // 💡 Raw JSON 문자열 상태 (양방향 바인딩용)
                 rawJsonString: '',
-                templateName: '', // 저장할 파일명
+                templateName: '',
 
                 runCustomFunctions() {
                   const scriptsMap = window.__POCKET_CODES || {};
-                  
                   Object.entries(scriptsMap).forEach(([fileName, rawCode]) => {
                     try {
                       const pocket = {
@@ -109,7 +106,7 @@ export const Home = ({
                   });
                 },
 
-                // 💡 GUI 상태를 Raw JSON 문자열로 변환
+                // 💡 수정됨: Raw 모드일 때 타이핑 중 커서 튐 현상 방지
                 updateRawJson() {
                   if (this.viewMode === 'raw') return; 
 
@@ -124,7 +121,6 @@ export const Home = ({
                   this.rawJsonString = JSON.stringify(payload, null, 2);
                 },
 
-                // 💡 Raw JSON 텍스트 에어리어 입력 시 GUI 폼 동기화
                 parseRawJson() {
                   try {
                     const parsed = JSON.parse(this.rawJsonString);
@@ -139,19 +135,19 @@ export const Home = ({
                     this.params = (parsed.params && parsed.params.length > 0) 
                       ? parsed.params : [{ key: '', value: '', active: true }];
                   } catch (e) {
-                    // 입력 중 문법 오류가 나면 무시 (완성될 때 파싱)
+                    // 문법 오류 무시
                   }
                 },
 
-                // 💡 현재 템플릿을 서버에 저장
+                // 💡 수정됨: 저장 시 사이드바 즉시 갱신 이벤트 발송 추가
                 async saveTemplate() {
                   let name = prompt('저장할 템플릿 이름을 입력하세요 (예: user-login)', this.templateName);
                   if (!name) return;
                   name = name.trim();
                   
-                  // 저장 전 최신 상태 반영
+                  // GUI 모드일 때만 폼 데이터를 JSON으로 포맷팅 (Raw 모드 공백 보존)
                   if (this.viewMode === 'gui') {
-                    this.updateRawJson();
+                    this.updateRawJson(); 
                   }
                   
                   try {
@@ -162,9 +158,17 @@ export const Home = ({
                     });
                     if (res.ok) {
                       this.templateName = name;
-                      alert('저장되었습니다.');
-                      // 💡 fetch는 HTMX 트리거를 무시하므로, 브라우저 이벤트를 직접 강제로 쏴서 사이드바를 리로드시킵니다!
-                      window.dispatchEvent(new CustomEvent('templates-updated'));
+                      // alert('저장되었습니다.');
+                      
+                      // 💡 HTMX가 사이드바를 다시 불러오도록 강제로 이벤트를 발생시킴! (bubbles: true 필수)
+                      document.body.dispatchEvent(new Event('templates-updated', { bubbles: true }));
+
+                      // 💡 2. 신규 추가: 사이드바가 갱신될 시간을 아주 잠깐(100ms) 준 뒤, 
+                      // 방금 저장한 템플릿(.json)을 Active 상태로 만들라고 명령 발송
+                      setTimeout(() => {
+                        const filename = name.endsWith('.json') ? name : name + '.json';
+                        window.dispatchEvent(new CustomEvent('template-saved', { detail: { filename } }));
+                      }, 100);
                     }
                   } catch(e) {
                     alert('저장 실패!');
@@ -184,17 +188,15 @@ export const Home = ({
                         this.updateRawJson();
                       });
                       
-                      // 입력값 변경 시 Raw JSON 실시간 동기화
                       this.$watch('params', () => this.updateRawJson(), { deep: true });
                       this.$watch('headers', () => this.updateRawJson(), { deep: true });
                       this.$watch('bodyType', () => this.updateRawJson());
                       this.$watch('bodyContent', () => this.updateRawJson());
                       
                       this.runCustomFunctions();
-                      this.updateRawJson(); // 초기화 시 1회 동기화
+                      this.updateRawJson(); 
                     },
                     
-                    // 💡 사이드바의 스냅샷 클릭 이벤트
                     ['x-on:fill-request-form.window']($event) {
                       const data = $event.detail;
                       this.method = data.method;
@@ -221,15 +223,18 @@ export const Home = ({
                         ? headerEntries.map(([key, value]) => ({ key, value: String(value), active: true }))
                         : [{ key: '', value: '', active: true }];
                       
-                      this.templateName = ''; // 스냅샷 로드 시 템플릿 이름 초기화
+                      this.templateName = ''; 
+                      // 스냅샷 로드 시 viewMode 무시하고 덮어씌움
+                      const oldMode = this.viewMode;
+                      this.viewMode = 'gui';
                       this.updateRawJson();
+                      this.viewMode = oldMode;
                     },
 
-                    // 💡 사이드바의 템플릿(Raw JSON) 클릭 이벤트
                     ['x-on:fill-template-form.window']($event) {
                       const data = $event.detail;
                       this.rawJsonString = JSON.stringify(data, null, 2);
-                      this.parseRawJson(); // JSON -> GUI로 파싱
+                      this.parseRawJson(); 
                     }
                   }
                 },
@@ -276,6 +281,8 @@ export const Home = ({
                   if (this.url.startsWith('http')) return this.url;
                   return this.baseUrl.replace(/\\/+$/, '') + '/' + this.url.replace(/^\\/+/, '');
                 },
+                addRow(type) { this[type].push({ key: '', value: '', active: true }) },
+                removeRow(type, index) { this[type].splice(index, 1) }
               }`}
               x-bind="formControl"
             >
@@ -318,7 +325,23 @@ export const Home = ({
                       class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto"
                       style="display: none;"
                     >
-                      {/* 자동완성 드롭다운 */}
+                      <template x-for="(s, index) in filteredSuggestions">
+                        <div
+                          x-on:click="url = s; showSuggestions = false; selectedIndex = -1"
+                          x-on:mouseenter="selectedIndex = index"
+                          x-bind:data-active="selectedIndex === index"
+                          x-bind:class="selectedIndex === index ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'"
+                          class="px-4 py-2 cursor-pointer font-mono text-xs border-b border-slate-50 last:border-0 transition-colors"
+                        >
+                          <span
+                            x-bind:class="selectedIndex === index ? 'text-indigo-600' : 'text-indigo-400'"
+                            class="font-bold"
+                          >
+                            ↳
+                          </span>{' '}
+                          <span x-text="s"></span>
+                        </div>
+                      </template>
                     </div>
                   </div>
                   <button
@@ -344,9 +367,10 @@ export const Home = ({
                       {tab}
                     </button>
                   ))}
+                  {/* 💡 탭 전환 시점 동기화 방어 */}
                   <button
                     type="button"
-                    x-on:click="updateRawJson(); viewMode = 'raw';"
+                    x-on:click="updateRawJson(); viewMode = 'raw'"
                     x-bind:class="viewMode === 'raw' ? 'border-b-2 border-slate-800 text-slate-800' : 'text-slate-500 hover:text-slate-800'"
                     class="px-5 py-2 flex items-center gap-1 transition-all font-mono"
                   >
@@ -359,12 +383,11 @@ export const Home = ({
                       viewBox="0 0 24 24"
                     >
                       <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
-                    </svg>{' '}
+                    </svg>
                     Raw JSON
                   </button>
                 </div>
 
-                {/* 💡 Save 버튼 */}
                 <button
                   type="button"
                   x-on:click="saveTemplate()"
@@ -490,7 +513,7 @@ export const Home = ({
                   </div>
                 </div>
 
-                {/* === 💡 Raw JSON 모드 === */}
+                {/* === Raw JSON 모드 === */}
                 <div x-show="viewMode === 'raw'" style="display: none;">
                   <p class="text-xs text-slate-500 mb-2">
                     이 JSON 텍스트를 수정하면 상단 URL 및 파라미터 폼에 즉시 반영됩니다.
