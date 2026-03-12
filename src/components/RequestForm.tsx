@@ -241,15 +241,24 @@ export const RequestForm = ({
       x-bind="formControl"
     >
       <div class="space-y-2">
-        {config.baseUrl && (
-          <div class="flex items-center px-0.5">
+        <div class="flex items-center justify-between px-0.5">
+          {config.baseUrl ? (
             <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-[10px] font-black text-indigo-600 uppercase tracking-wider shadow-sm">
               <span class="text-indigo-400">🔗</span>
               <span>Base:</span>
               <span class="font-mono lowercase text-indigo-500">{config.baseUrl}</span>
             </div>
-          </div>
-        )}
+          ) : (
+            <div></div>
+          )}
+          <button
+            type="button"
+            x-on:click="saveTemplate()"
+            class="px-3 py-1 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 transition-colors flex items-center gap-1 shadow-sm"
+          >
+            💾 Save Template
+          </button>
+        </div>
         <div class="flex gap-4">
           <select
             name="method"
@@ -339,14 +348,6 @@ export const RequestForm = ({
             Raw JSON
           </button>
         </div>
-
-        <button
-          type="button"
-          x-on:click="saveTemplate()"
-          class="px-3 py-1 mb-1 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 transition-colors flex items-center gap-1"
-        >
-          💾 Save Template
-        </button>
       </div>
 
       <div class="bg-slate-50/50 p-4 rounded-b-lg border-x border-b border-slate-200 min-h-[150px]">
