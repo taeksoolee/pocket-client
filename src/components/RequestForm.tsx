@@ -9,7 +9,7 @@ export const RequestForm = ({
   uniqueSuggestions: string[];
 }) => (
   <div
-    class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 overflow-hidden"
+    class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 overflow-hidden relative"
     x-data={`{
       activeTab: 'params',
       viewMode: 'gui',
@@ -26,6 +26,11 @@ export const RequestForm = ({
       
       rawJsonString: '',
       templateName: '',
+
+      // 💡 Get Code 기능 상태
+      showCodeModal: false,
+      generatedCode: '',
+      isCopied: false,
 
       runCustomFunctions() {
         const scriptsMap = window.__POCKET_CODES || {};
@@ -126,6 +131,65 @@ export const RequestForm = ({
         }
       },
 
+      generateFetchCode() {
+        let finalUrl = this.resolvedUrl;
+        const activeParams = this.params.filter(p => p.active && p.key.trim() !== '');
+        
+        if (activeParams.length > 0 && finalUrl) {
+          try {
+            const urlObj = new URL(finalUrl.startsWith('http') ? finalUrl : 'http://local' + (finalUrl.startsWith('/') ? finalUrl : '/' + finalUrl));
+            activeParams.forEach(p => urlObj.searchParams.append(p.key.trim(), p.value));
+            finalUrl = finalUrl.startsWith('http') ? urlObj.toString() : urlObj.pathname + urlObj.search;
+          } catch(e) {}
+        }
+
+        let lines = [];
+        lines.push("fetch('" + finalUrl + "', {");
+        lines.push("  method: '" + this.method + "'");
+        
+        const activeHeaders = this.headers.filter(h => h.active && h.key.trim() !== '');
+        let hasContentType = false;
+        
+        if (activeHeaders.length > 0 || (this.method !== 'GET' && this.bodyType === 'json')) {
+          lines[lines.length - 1] += ',';
+          lines.push('  headers: {');
+          activeHeaders.forEach(h => {
+            lines.push('    "' + h.key.trim() + '": "' + h.value.replace(/"/g, '\\\\"') + '",');
+            if (h.key.trim().toLowerCase() === 'content-type') hasContentType = true;
+          });
+          
+          if (this.method !== 'GET' && this.bodyType === 'json' && !hasContentType) {
+            lines.push('    "Content-Type": "application/json"');
+          }
+          lines.push('  }');
+        }
+
+        if (this.method !== 'GET' && this.bodyType === 'json' && this.bodyContent) {
+          lines[lines.length - 1] += ',';
+          let bodyStr = this.bodyContent;
+          try { bodyStr = JSON.stringify(JSON.parse(this.bodyContent), null, 2); } catch(e){}
+          let formattedBody = bodyStr.split('\\n').join('\\n    ');
+          lines.push('  body: JSON.stringify(' + formattedBody + ')');
+        }
+
+        lines.push('})');
+        lines.push('.then(response => response.json())');
+        lines.push('.then(data => console.log(data))');
+        lines.push('.catch(error => console.error("Error:", error));');
+
+        this.generatedCode = lines.join('\\n');
+        this.isCopied = false; 
+        this.showCodeModal = true;
+      },
+
+      copyCode() {
+        navigator.clipboard.writeText(this.generatedCode).then(() => {
+          this.isCopied = true;
+          if (this.copyTimer) clearTimeout(this.copyTimer);
+          this.copyTimer = setTimeout(() => { this.isCopied = false; }, 2000);
+        });
+      },
+
       get formControl() {
         return {
           ['x-init']() {
@@ -188,7 +252,29 @@ export const RequestForm = ({
           }
         }
       },
+
       get suggestionContainer() { return { ['x-on:click.outside']() { this.showSuggestions = false; this.selectedIndex = -1; } } },
+      
+      get modalBackdrop() {
+        return {
+          ['x-transition:enter']: 'ease-out duration-200',
+          ['x-transition:enter-start']: 'opacity-0',
+          ['x-transition:enter-end']: 'opacity-100',
+          ['x-transition:leave']: 'ease-in duration-150',
+          ['x-transition:leave-start']: 'opacity-100',
+          ['x-transition:leave-end']: 'opacity-0'
+        }
+      },
+      
+      get modalContent() {
+        return {
+          ['x-on:click.outside']() { this.showCodeModal = false; },
+          ['x-transition:enter']: 'ease-out duration-200',
+          ['x-transition:enter-start']: 'scale-95 translate-y-2',
+          ['x-transition:enter-end']: 'scale-100 translate-y-0'
+        }
+      },
+
       scrollToSelected() {
         this.$nextTick(() => {
           const box = this.$refs.suggestionBox;
@@ -235,7 +321,6 @@ export const RequestForm = ({
       removeRow(type, index) { this[type].splice(index, 1) }
     }`}
   >
-    {/* 🆕 카드 헤더 영역: 상단 툴바 느낌 */}
     <div class="bg-slate-50 border-b border-slate-200 px-6 py-3 flex justify-between items-center">
       <div class="flex items-center gap-2">
         {config.baseUrl ? (
@@ -250,17 +335,28 @@ export const RequestForm = ({
           </div>
         )}
       </div>
-      <button
-        type="button"
-        x-on:click="saveTemplate()"
-        class="px-3 py-1 text-[11px] font-bold text-indigo-600 bg-white hover:bg-indigo-50 rounded border border-indigo-100 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-      >
-        <span>💾</span>
-        <span>Save Template</span>
-      </button>
+
+      <div class="flex gap-2">
+        <button
+          type="button"
+          x-on:click="generateFetchCode()"
+          class="px-3 py-1 text-[11px] font-bold text-slate-600 bg-white hover:bg-slate-100 rounded border border-slate-200 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+        >
+          <span>💻</span>
+          <span>Get Code</span>
+        </button>
+
+        <button
+          type="button"
+          x-on:click="saveTemplate()"
+          class="px-3 py-1 text-[11px] font-bold text-indigo-600 bg-white hover:bg-indigo-50 rounded border border-indigo-100 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+        >
+          <span>💾</span>
+          <span>Save Template</span>
+        </button>
+      </div>
     </div>
 
-    {/* 폼 본문 영역 */}
     <div class="p-6">
       <form
         hx-post="/request"
@@ -326,7 +422,6 @@ export const RequestForm = ({
           </button>
         </div>
 
-        {/* 🆕 URL Preview: 입력 행 아래로 이동하여 버튼 높이에 영향을 주지 않음 */}
         <div
           class="px-1 flex items-center gap-1.5 text-[10px] font-mono text-slate-400 overflow-hidden"
           x-show="url.trim().length > 0"
@@ -338,7 +433,6 @@ export const RequestForm = ({
           <span class="truncate text-slate-500" x-text="resolvedUrl"></span>
         </div>
 
-        {/* === 탭 UI === */}
         <div class="flex justify-between items-center border-b border-slate-200 mt-6 mb-0">
           <div class="flex text-sm font-medium">
             {['params', 'headers', 'body'].map((tab) => (
@@ -374,7 +468,6 @@ export const RequestForm = ({
         </div>
 
         <div class="bg-slate-50/50 p-4 rounded-b-lg border-x border-b border-slate-200 min-h-[150px]">
-          {/* === GUI 모드 === */}
           <div x-show="viewMode === 'gui'">
             <div x-show="activeTab === 'params'" class="space-y-2">
               <template x-for="(item, index) in params" x-bind:key="index">
@@ -489,7 +582,6 @@ export const RequestForm = ({
             </div>
           </div>
 
-          {/* === Raw JSON 모드 === */}
           <div x-show="viewMode === 'raw'" style="display: none;">
             <p class="text-xs text-slate-500 mb-2">
               이 JSON 텍스트를 수정하면 상단 URL 및 파라미터 폼에 즉시 반영됩니다.
@@ -504,6 +596,65 @@ export const RequestForm = ({
         </div>
         <input type="hidden" name="pocket_payload" x-bind:value="rawJsonString" />
       </form>
+    </div>
+
+    {/* 💡 핵심 변경: absolute를 fixed로, z-index를 100으로 올려서 진짜 전체화면 팝업 구현 */}
+    <div
+      x-show="showCodeModal"
+      style="display: none;"
+      class="fixed inset-0 z-[100] bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity"
+      x-bind="modalBackdrop"
+    >
+      <div
+        class="bg-[#0d1117] w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden border border-slate-700/80 flex flex-col transform transition-transform"
+        x-bind="modalContent"
+      >
+        <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+          <div class="flex items-center gap-4">
+            <div class="flex gap-1.5">
+              <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+              <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+              <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+            </div>
+            <div class="text-slate-400 font-mono text-[11px] tracking-wider font-bold">
+              fetch-snippet.js
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              x-on:click="copyCode()"
+              x-bind:class="isCopied ? 'bg-green-600/20 text-green-400 border-green-500/30' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'"
+              class="px-3 py-1.5 text-xs font-bold rounded-md border transition-all flex items-center gap-1.5 outline-none shadow-sm"
+            >
+              <span x-text="isCopied ? '✅' : '📋'"></span>
+              <span x-text="isCopied ? 'Copied!' : 'Copy Code'"></span>
+            </button>
+            <div class="w-px h-4 bg-slate-700"></div>
+            <button
+              type="button"
+              x-on:click="showCodeModal = false"
+              class="p-1 text-slate-500 hover:text-white hover:bg-red-500/80 rounded transition-colors outline-none"
+            >
+              <svg
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="p-6 overflow-auto max-h-[60vh] custom-scrollbar bg-[#0d1117]">
+          <pre class="text-[13px] text-emerald-400 font-mono leading-relaxed">
+            <code x-text="generatedCode"></code>
+          </pre>
+        </div>
+      </div>
     </div>
   </div>
 );
