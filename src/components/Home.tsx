@@ -137,7 +137,7 @@ export const Home = ({
           <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
             <form
               hx-post="/request"
-              hx-target="#result"
+              hx-target="#snapshort"
               hx-disabled-elt="button"
               class="space-y-4"
               x-data={`{
@@ -619,7 +619,7 @@ export const Home = ({
               <input type="hidden" name="pocket_payload" x-bind:value="rawJsonString" />
             </form>
           </div>
-          <div id="result"></div>
+          <div id="snapshort"></div>
         </div>
       </main>
     </Layout>

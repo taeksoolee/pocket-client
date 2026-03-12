@@ -19,7 +19,7 @@ export const SidebarList = ({
           {type === 'snapshots' ? (
             <button
               hx-get={`/snapshots/${item}`}
-              hx-target="#result"
+              hx-target="#snapshort"
               x-on:click={`activeFile = '${item}'`}
               x-bind:class={`activeFile === '${item}' ? 'text-indigo-300 font-bold' : 'text-slate-300 hover:text-indigo-300'`}
               class="flex-1 text-left px-3 py-2 text-[11px] font-mono truncate outline-none"
@@ -46,7 +46,7 @@ export const SidebarList = ({
           <button
             hx-delete={`/${type}/${item}`}
             hx-confirm={`'${item}' 을(를) 삭제하시겠습니까?`}
-            hx-target={type === 'snapshots' ? '#result' : null}
+            hx-target={type === 'snapshots' ? '#snapshort' : null}
             class="opacity-0 group-hover:opacity-100 p-2 mr-1 text-slate-500 hover:text-red-400 transition-all hover:scale-110"
             title="삭제"
           >

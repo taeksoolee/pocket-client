@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import { SuccessCard } from '../components/partials/ResultCard';
+import { SuccessCard } from '../components/partials/SnapshortCard';
 import { deleteSnapshot, getSnapshot } from '../utils/snapshot';
 
 const snapshots = new Hono();
