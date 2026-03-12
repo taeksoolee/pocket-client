@@ -234,12 +234,48 @@ export const Home = ({
                   }
                 },
                 get suggestionContainer() { return { ['x-on:click.outside']() { this.showSuggestions = false; this.selectedIndex = -1; } } },
-                scrollToSelected() { /* 생략 */ },
-                get urlInput() { /* 생략 */ },
-                get filteredSuggestions() { /* 생략 */ },
-                get resolvedUrl() { /* 생략 */ },
-                addRow(type) { this[type].push({ key: '', value: '', active: true }) },
-                removeRow(type, index) { this[type].splice(index, 1) }
+                scrollToSelected() {
+                  this.$nextTick(() => {
+                    const box = this.$refs.suggestionBox;
+                    if (!box) return;
+                    const activeEl = box.querySelector('[data-active="true"]');
+                    if (activeEl) { activeEl.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+                  });
+                },
+                get urlInput() {
+                  return {
+                    ['x-on:focus']() { this.showSuggestions = true },
+                    ['x-on:input']() { this.showSuggestions = true },
+                    ['x-on:keydown.escape']() { this.showSuggestions = false; this.selectedIndex = -1; },
+                    ['x-on:keydown.down.prevent']() {
+                      if (!this.showSuggestions) return;
+                      this.selectedIndex = (this.selectedIndex + 1) % this.filteredSuggestions.length;
+                      this.scrollToSelected();
+                    },
+                    ['x-on:keydown.up.prevent']() {
+                      if (!this.showSuggestions) return;
+                      this.selectedIndex = (this.selectedIndex - 1 + this.filteredSuggestions.length) % this.filteredSuggestions.length;
+                      this.scrollToSelected();
+                    },
+                    ['x-on:keydown.enter']($event) {
+                      if (this.showSuggestions && this.selectedIndex !== -1) {
+                        $event.preventDefault();
+                        this.url = this.filteredSuggestions[this.selectedIndex];
+                        this.showSuggestions = false;
+                        this.selectedIndex = -1;
+                      }
+                    }
+                  }
+                },
+                get filteredSuggestions() {
+                  if (!this.url.startsWith('/')) return [];
+                  const s = this.url.toLowerCase();
+                  return this.allSuggestions.filter(item => item.toLowerCase().includes(s) && item !== this.url).slice(0, 10);
+                },
+                get resolvedUrl() {
+                  if (this.url.startsWith('http')) return this.url;
+                  return this.baseUrl.replace(/\\/+$/, '') + '/' + this.url.replace(/^\\/+/, '');
+                },
               }`}
               x-bind="formControl"
             >
