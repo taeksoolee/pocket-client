@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { Hono } from 'hono';
 
 import { Home } from '../components/Home';
-import { SidebarList } from '../components/Sidebar';
+import { SidebarList } from '../components/SidebarList';
 import { functionsDir, templatesDir } from '../config';
 import { getSnapshots, getURLSuggestions } from '../utils/snapshot';
 

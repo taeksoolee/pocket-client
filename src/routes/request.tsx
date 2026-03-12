@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
-import { ErrorCard, SuccessCard } from '../components/partials/SnapshortCard';
+import { ErrorCard } from '../components/partials/ErrorCard';
+import { SuccessCard } from '../components/partials/SuccessCard';
 import { config } from '../config';
 import { saveSnapshot } from '../utils/snapshot';
 
