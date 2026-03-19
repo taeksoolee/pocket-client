@@ -4,6 +4,7 @@ import { basename, join } from 'node:path'; // 💡 basename 임포트 필수
 import { Hono } from 'hono';
 
 import { templatesDir } from '../config';
+import { isRecord } from '../types';
 
 const templates = new Hono();
 
@@ -36,7 +37,10 @@ templates.post('/:name', async (c) => {
   const filePath = getSafeFilePath(c.req.param('name'));
 
   try {
-    const body = await c.req.json();
+    const body: unknown = await c.req.json().catch(() => null);
+    if (!isRecord(body)) {
+      return c.json({ error: '유효한 JSON 객체가 필요합니다' }, 400);
+    }
 
     // 💡 나중에 에디터나 CLI에서 보기 좋도록 2칸 들여쓰기로 예쁘게 저장 (Pretty Print)
     writeFileSync(filePath, JSON.stringify(body, null, 2), 'utf-8');

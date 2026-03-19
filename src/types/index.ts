@@ -13,6 +13,18 @@ export interface RequestPayload {
   bodyContent: string;
 }
 
+// ─── 런타임 타입 가드 ────────────────────────────────────────────────────────
+
+export function isString(v: unknown): v is string {
+  return typeof v === 'string';
+}
+
+export function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+// ─── 요청 바디 인터페이스 ────────────────────────────────────────────────────
+
 export interface RequestFormBody {
   url: string;
   method: string;

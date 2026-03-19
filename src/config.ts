@@ -27,6 +27,28 @@ const INTERNAL_DEFAULT: PocketConfig = {
   timeout: 10000, // 💡 기본 타임아웃 10초 추가
 };
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+function validateConfig(raw: unknown, base: PocketConfig): PocketConfig {
+  if (!isRecord(raw)) return base;
+  const result = { ...base };
+  if (typeof raw.port === 'number') result.port = raw.port;
+  if (typeof raw.baseUrl === 'string') result.baseUrl = raw.baseUrl;
+  if (typeof raw.timeout === 'number') result.timeout = raw.timeout;
+  if (typeof raw.loadedEnv === 'string') result.loadedEnv = raw.loadedEnv;
+  if (isRecord(raw.globalHeaders)) {
+    result.globalHeaders = Object.fromEntries(
+      Object.entries(raw.globalHeaders).filter(([, v]) => typeof v === 'string') as [string, string][],
+    );
+  }
+  if (Array.isArray(raw.commonEndpoints)) {
+    result.commonEndpoints = raw.commonEndpoints.filter((v): v is string => typeof v === 'string');
+  }
+  return result;
+}
+
 function loadConfig(): PocketConfig {
   const configDir = join(workspaceDir, 'config');
   let finalConfig = { ...INTERNAL_DEFAULT };
@@ -35,8 +57,8 @@ function loadConfig(): PocketConfig {
     // 1. default.json 로드
     const defaultPath = join(configDir, 'default.json');
     if (existsSync(defaultPath)) {
-      const defaultData = JSON.parse(readFileSync(defaultPath, 'utf-8'));
-      finalConfig = { ...finalConfig, ...defaultData };
+      const defaultData: unknown = JSON.parse(readFileSync(defaultPath, 'utf-8'));
+      finalConfig = validateConfig(defaultData, finalConfig);
     }
 
     // 2. POCKET_ENV 환경변수에 따른 로드 (예: dev.json)
@@ -44,14 +66,12 @@ function loadConfig(): PocketConfig {
     if (env) {
       const envPath = join(configDir, `${env}.json`);
       if (existsSync(envPath)) {
-        const envData = JSON.parse(readFileSync(envPath, 'utf-8'));
-        finalConfig = {
-          ...finalConfig,
-          ...envData,
-          // 💡 globalHeaders는 날아가지 않도록 깊은 병합 처리
-          globalHeaders: { ...(finalConfig.globalHeaders || {}), ...(envData.globalHeaders || {}) },
-          loadedEnv: env, // 💡 현재 로드된 환경 정보 추가
-        };
+        const envData: unknown = JSON.parse(readFileSync(envPath, 'utf-8'));
+        // globalHeaders는 날아가지 않도록 깊은 병합 후 검증
+        const merged = isRecord(envData) && isRecord(envData.globalHeaders)
+          ? { ...envData, globalHeaders: { ...finalConfig.globalHeaders, ...envData.globalHeaders }, loadedEnv: env }
+          : { ...(isRecord(envData) ? envData : {}), loadedEnv: env };
+        finalConfig = validateConfig(merged, finalConfig);
       }
     }
   } catch (err) {

@@ -117,7 +117,7 @@ export const SuccessCard = ({
                 {Object.entries(response.headers).map(([key, value]) => (
                   <tr class="border-b border-slate-800">
                     <td class="py-2 pr-4 text-indigo-400 font-semibold">{key}</td>
-                    <td class="py-2 text-slate-300 break-all">{value as string}</td>
+                    <td class="py-2 text-slate-300 break-all">{value}</td>
                   </tr>
                 ))}
               </tbody>
@@ -129,7 +129,7 @@ export const SuccessCard = ({
                 {Object.entries(request.headers).map(([key, value]) => (
                   <tr class="border-b border-slate-800">
                     <td class="py-2 pr-4 text-emerald-400 font-semibold">{key}</td>
-                    <td class="py-2 text-slate-300 break-all">{value as string}</td>
+                    <td class="py-2 text-slate-300 break-all">{value}</td>
                   </tr>
                 ))}
               </tbody>
