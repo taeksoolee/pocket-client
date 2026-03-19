@@ -33,6 +33,7 @@ export const RequestForm = ({
       isCopied: false,
 
       runCustomFunctions() {
+        window.PocketActions = {};
         const scriptsMap = window.__POCKET_CODES || {};
         Object.entries(scriptsMap).forEach(([fileName, rawCode]) => {
           try {
@@ -48,25 +49,13 @@ export const RequestForm = ({
               getUrl: () => this.url,
               setMethod: (val) => this.method = val,
               registerAction: (name, fn) => {
-                window.PocketActions = window.PocketActions || {};
                 window.PocketActions[name] = fn.bind(this);
               }
             };
 
-            const allMatches = Array.from(rawCode.matchAll(/(?:async\\s+)?function\\s+([a-zA-Z_$][\\w$]*)/g));
-            const funcNames = allMatches.map(m => m[1]);
-
-            if (funcNames.length === 0) return;
-
-            const primaryFunc = funcNames[0];
-
-            try {
-              const finalCode = \`\${rawCode}\\n\\nif(typeof \${primaryFunc} === 'function') \${primaryFunc}(pocket);\\n//# sourceURL=pocket/functions/\${fileName}.js\`;
-              const runner = new Function('pocket', finalCode);
-              runner(pocket);
-            } catch (runtimeError) {
-              console.error(\`❌ [\${fileName}.js] Error:\`, runtimeError.message);
-            }
+            const finalCode = rawCode + '\\n//# sourceURL=pocket/functions/' + fileName + '.js';
+            const runner = new Function('pocket', 'registerAction', 'setHeader', 'setUrl', 'setMethod', 'getHeaders', 'getUrl', finalCode);
+            runner(pocket, pocket.registerAction, pocket.setHeader, pocket.setUrl, pocket.setMethod, pocket.getHeaders, pocket.getUrl);
           } catch (e) {
             window.showToast('함수 로딩 실패 [' + fileName + ']: ' + (e instanceof Error ? e.message : String(e)));
           }
