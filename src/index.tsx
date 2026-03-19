@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
@@ -8,6 +9,14 @@ import homeRoute from './routes/home';
 import requestRoute from './routes/request';
 import snapshots from './routes/snapshots';
 import templatesRoute from './routes/templates';
+
+// snapshorts → snapshots 폴더명 오타 자동 마이그레이션
+const legacySnapshotsDir = join(workspaceDir, 'snapshorts');
+const snapshotsDir = join(workspaceDir, 'snapshots');
+if (existsSync(legacySnapshotsDir) && !existsSync(snapshotsDir)) {
+  renameSync(legacySnapshotsDir, snapshotsDir);
+  console.log('📦 snapshorts → snapshots 폴더 자동 이름 변경 완료');
+}
 
 if (!existsSync(functionsDir)) {
   mkdirSync(functionsDir, { recursive: true });

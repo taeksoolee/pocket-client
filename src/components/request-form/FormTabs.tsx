@@ -19,7 +19,14 @@ export const FormTabs = () => (
           x-bind:class="viewMode === 'raw' ? 'border-b-2 border-slate-800 text-slate-800' : 'text-slate-500 hover:text-slate-800'"
           class="px-5 py-2 flex items-center gap-1 transition-all font-mono"
         >
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
             <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
           </svg>
           Raw JSON
@@ -32,7 +39,11 @@ export const FormTabs = () => (
         <div x-show="activeTab === 'params'" class="space-y-2">
           <template x-for="(item, index) in params" x-bind:key="index">
             <div class="flex gap-2 items-center">
-              <input type="checkbox" x-model="item.active" class="w-4 h-4 rounded border-slate-300 text-indigo-600" />
+              <input
+                type="checkbox"
+                x-model="item.active"
+                class="w-4 h-4 rounded border-slate-300 text-indigo-600"
+              />
               <input
                 type="text"
                 x-model="item.key"
@@ -45,14 +56,29 @@ export const FormTabs = () => (
                 placeholder="Value"
                 class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm outline-none focus:border-indigo-500"
               />
-              <button type="button" x-on:click="removeRow('params', index)" class="p-1.5 text-slate-400 hover:text-red-500">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <button
+                type="button"
+                x-on:click="removeRow('params', index)"
+                class="p-1.5 text-slate-400 hover:text-red-500"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                 </svg>
               </button>
             </div>
           </template>
-          <button type="button" x-on:click="addRow('params')" class="text-xs text-indigo-600 font-bold hover:underline mt-2 flex items-center gap-1">
+          <button
+            type="button"
+            x-on:click="addRow('params')"
+            class="text-xs text-indigo-600 font-bold hover:underline mt-2 flex items-center gap-1"
+          >
             + Add Parameter
           </button>
         </div>
@@ -60,7 +86,11 @@ export const FormTabs = () => (
         <div x-show="activeTab === 'headers'" class="space-y-2" style="display: none;">
           <template x-for="(item, index) in headers" x-bind:key="index">
             <div class="flex gap-2 items-center">
-              <input type="checkbox" x-model="item.active" class="w-4 h-4 rounded border-slate-300 text-indigo-600" />
+              <input
+                type="checkbox"
+                x-model="item.active"
+                class="w-4 h-4 rounded border-slate-300 text-indigo-600"
+              />
               <input
                 type="text"
                 x-model="item.key"
@@ -73,14 +103,29 @@ export const FormTabs = () => (
                 placeholder="Value"
                 class="flex-1 border border-slate-300 rounded p-1.5 font-mono text-sm outline-none focus:border-indigo-500"
               />
-              <button type="button" x-on:click="removeRow('headers', index)" class="p-1.5 text-slate-400 hover:text-red-500">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <button
+                type="button"
+                x-on:click="removeRow('headers', index)"
+                class="p-1.5 text-slate-400 hover:text-red-500"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                 </svg>
               </button>
             </div>
           </template>
-          <button type="button" x-on:click="addRow('headers')" class="text-xs text-indigo-600 font-bold hover:underline mt-2 flex items-center gap-1">
+          <button
+            type="button"
+            x-on:click="addRow('headers')"
+            class="text-xs text-indigo-600 font-bold hover:underline mt-2 flex items-center gap-1"
+          >
             + Add Header
           </button>
         </div>
@@ -111,7 +156,7 @@ export const FormTabs = () => (
         <textarea
           x-model="rawJsonString"
           x-on:input="parseRawJson()"
-          class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:border-slate-500 bg-slate-800 text-green-400 min-h-[250px]"
+          class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:border-slate-500 bg-slate-800 text-green-400 min-h-62.5"
           spellcheck={false}
         ></textarea>
       </div>

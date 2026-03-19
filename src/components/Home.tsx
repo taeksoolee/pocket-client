@@ -49,8 +49,8 @@ export const Home = ({
           </header>
 
           <RequestForm initialHeaders={initialHeaders} uniqueSuggestions={uniqueSuggestions} />
-          
-          <div id="snapshort"></div>
+
+          <div id="snapshot"></div>
         </div>
       </main>
     </Layout>

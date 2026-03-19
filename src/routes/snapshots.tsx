@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
-import { SuccessCard } from '../components/partials/SnapshortCard';
+import { SuccessCard } from '../components/partials/SnapshotCard';
+import { formatDisplayTimestamp } from '../utils/date';
 import { deleteSnapshot, getSnapshot } from '../utils/snapshot';
 
 const snapshots = new Hono();
@@ -36,12 +37,9 @@ snapshots.get('/:filename', async (c) => {
     return c.html(<div class="p-4 text-red-500">스냅샷 데이터가 손상되었습니다.</div>);
   }
 
-  // 타임스탬프 포맷팅
-  let formattedTimestamp = '';
-  if (snapshot.timestamp) {
-    const d = new Date(snapshot.timestamp);
-    formattedTimestamp = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
-  }
+  const formattedTimestamp = snapshot.timestamp
+    ? formatDisplayTimestamp(new Date(snapshot.timestamp))
+    : '';
 
   // 💡 핵심 수정: HTTP 헤더 에러 방지를 위해 url과 body를 encodeURIComponent로 감싸서 보냄
   c.header(

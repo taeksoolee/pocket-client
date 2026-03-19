@@ -151,7 +151,7 @@ export const SuccessCard = ({
               Snapshot Path:
             </span>
             <span class="bg-slate-200/50 px-1.5 py-0.5 rounded text-slate-500">
-              ./{basename(workspaceDir)}/snapshorts/{filename}
+              ./{basename(workspaceDir)}/snapshots/{filename}
             </span>
           </div>
           <div class="text-[9px] uppercase font-bold tracking-widest text-slate-300">

@@ -53,7 +53,7 @@ export const RequestForm = ({
     <div class="p-6">
       <form
         hx-post="/request"
-        hx-target="#snapshort"
+        hx-target="#snapshot"
         hx-disabled-elt="button[type='submit']"
         class="space-y-4"
         x-ref="requestForm"

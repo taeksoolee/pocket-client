@@ -2,7 +2,7 @@ export const CodeModal = () => (
   <div
     x-show="showCodeModal"
     style="display: none;"
-    class="fixed inset-0 z-[100] bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity"
+    class="fixed inset-0 z-100 bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity"
     x-bind="modalBackdrop"
   >
     <div
@@ -16,7 +16,9 @@ export const CodeModal = () => (
             <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
             <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
           </div>
-          <div class="text-slate-400 font-mono text-[11px] tracking-wider font-bold">fetch-snippet.js</div>
+          <div class="text-slate-400 font-mono text-[11px] tracking-wider font-bold">
+            fetch-snippet.js
+          </div>
         </div>
         <div class="flex items-center gap-3">
           <button
@@ -34,7 +36,14 @@ export const CodeModal = () => (
             x-on:click="showCodeModal = false"
             class="p-1 text-slate-500 hover:text-white hover:bg-red-500/80 rounded transition-colors outline-none"
           >
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

@@ -5,6 +5,7 @@ import { SuccessCard } from '../components/partials/SuccessCard';
 import { config } from '../config';
 import type { RequestPayload, RequestRow } from '../types';
 import { isValidRequestFormBody } from '../types';
+import { formatDisplayTimestamp } from '../utils/date';
 import { saveSnapshot } from '../utils/snapshot';
 
 const request = new Hono();
@@ -105,9 +106,7 @@ request.post('/', async (c) => {
     const responseData = isJson ? await response.json() : await response.text();
     const duration = Date.now() - startTime;
 
-    // 💡 인간 친화적인 타임스탬프 생성 (YYYY-MM-DD HH:mm:ss)
-    const now = new Date();
-    const formattedTimestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    const formattedTimestamp = formatDisplayTimestamp();
 
     // 💡 스냅샷 및 UI용 데이터 (디코딩된 한글 URL 저장)
     const requestData = {

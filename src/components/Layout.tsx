@@ -4,7 +4,7 @@ import { ALPINE_LIB, HTMX_LIB, TAILWIND_CSS } from '../config';
 import { Toast } from './Toast';
 
 export const Layout = ({ children }: { children: Child }) => (
-  <html lang="ko">
+  <html lang="en">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />

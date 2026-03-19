@@ -58,7 +58,7 @@ export const Sidebar = ({ snapshots, templates }: { snapshots: string[]; templat
           x-bind:class="activeTab === 'snapshots' ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
           class="text-xs uppercase tracking-wider transition-colors"
         >
-          🕒 Snapshorts
+          🕒 Snapshots
         </button>
         <span class="text-slate-600">|</span>
         <button

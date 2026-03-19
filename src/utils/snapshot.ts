@@ -4,6 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import { config, workspaceDir } from '../config';
+import { formatFileTimestamp } from './date';
 
 export interface SnapshotRequest {
   method: string;
@@ -53,24 +54,16 @@ export function invalidateSuggestionsCache() {
 // ─── 저장 ───────────────────────────────────────────────────────────────────
 
 export async function saveSnapshot(params: SnapshotParams) {
-  const snapshortsDir = path.join(workspaceDir, 'snapshorts');
-  await mkdir(snapshortsDir, { recursive: true });
+  const snapshotsDir = path.join(workspaceDir, 'snapshots');
+  await mkdir(snapshotsDir, { recursive: true });
 
   const timestamp = new Date();
-
-  const y = timestamp.getFullYear().toString().slice(-2);
-  const m = (timestamp.getMonth() + 1).toString().padStart(2, '0');
-  const d = timestamp.getDate().toString().padStart(2, '0');
-  const hh = timestamp.getHours().toString().padStart(2, '0');
-  const mm = timestamp.getMinutes().toString().padStart(2, '0');
-  const ss = timestamp.getSeconds().toString().padStart(2, '0');
-  const ms = timestamp.getMilliseconds().toString().padStart(3, '0');
-  const formattedDate = `${y}${m}${d}${hh}${mm}${ss}${ms}`;
+  const formattedDate = formatFileTimestamp(timestamp);
 
   const decodedUrl = decodeURIComponent(params.request.url);
   const safeUrl = decodedUrl.replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 50);
   const filename = `${formattedDate}_${params.request.method}_${safeUrl}.json`;
-  const filePath = path.join(snapshortsDir, filename);
+  const filePath = path.join(snapshotsDir, filename);
 
   const snapshot: Snapshot = {
     timestamp: timestamp.toISOString(),
@@ -79,7 +72,7 @@ export async function saveSnapshot(params: SnapshotParams) {
   };
 
   await writeFile(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
-  await pruneSnapshots(snapshortsDir, config.maxSnapshots ?? 200);
+  await pruneSnapshots(snapshotsDir, config.maxSnapshots ?? 200);
   invalidateSuggestionsCache();
   return { filename, filePath };
 }
@@ -95,25 +88,25 @@ async function pruneSnapshots(dir: string, max: number): Promise<void> {
 // ─── 조회 ───────────────────────────────────────────────────────────────────
 
 export async function getSnapshots(): Promise<string[]> {
-  const snapshortsDir = path.join(workspaceDir, 'snapshorts');
-  if (!existsSync(snapshortsDir)) return [];
-  const files = await readdir(snapshortsDir);
+  const snapshotsDir = path.join(workspaceDir, 'snapshots');
+  if (!existsSync(snapshotsDir)) return [];
+  const files = await readdir(snapshotsDir);
   return files.filter((f) => f.endsWith('.json')).sort((a, b) => b.localeCompare(a));
 }
 
 export async function getURLSuggestions(): Promise<string[]> {
   if (suggestionsCache) return suggestionsCache;
 
-  const snapshortsDir = path.join(workspaceDir, 'snapshorts');
-  if (!existsSync(snapshortsDir)) return [];
+  const snapshotsDir = path.join(workspaceDir, 'snapshots');
+  if (!existsSync(snapshotsDir)) return [];
 
-  const files = (await readdir(snapshortsDir)).filter((f) => f.endsWith('.json'));
+  const files = (await readdir(snapshotsDir)).filter((f) => f.endsWith('.json'));
   const paths = new Set<string>();
 
   await Promise.all(
     files.map(async (file) => {
       try {
-        const content = await readFile(path.join(snapshortsDir, file), 'utf-8');
+        const content = await readFile(path.join(snapshotsDir, file), 'utf-8');
         const data = JSON.parse(content) as Snapshot;
         const url = data.request?.url ?? data.meta?.url;
         if (url) {
@@ -131,14 +124,14 @@ export async function getURLSuggestions(): Promise<string[]> {
 }
 
 export async function getSnapshot(filename: string): Promise<Snapshot | null> {
-  const filePath = path.join(workspaceDir, 'snapshorts', filename);
+  const filePath = path.join(workspaceDir, 'snapshots', filename);
   if (!existsSync(filePath)) return null;
   const content = await readFile(filePath, 'utf-8');
   return JSON.parse(content) as Snapshot;
 }
 
 export async function deleteSnapshot(filename: string): Promise<boolean> {
-  const filePath = path.join(workspaceDir, 'snapshorts', filename);
+  const filePath = path.join(workspaceDir, 'snapshots', filename);
   if (!existsSync(filePath)) return false;
   await unlink(filePath);
   return true;

@@ -14,7 +14,9 @@ export function generateFetchCode(opts: FetchCodeOptions): string {
   if (activeParams.length > 0 && finalUrl) {
     try {
       const urlObj = new URL(
-        finalUrl.startsWith('http') ? finalUrl : 'http://local' + (finalUrl.startsWith('/') ? finalUrl : '/' + finalUrl),
+        finalUrl.startsWith('http')
+          ? finalUrl
+          : 'http://local' + (finalUrl.startsWith('/') ? finalUrl : '/' + finalUrl),
       );
       activeParams.forEach((p) => urlObj.searchParams.append(p.key.trim(), p.value));
       finalUrl = finalUrl.startsWith('http') ? urlObj.toString() : urlObj.pathname + urlObj.search;
