@@ -120,7 +120,7 @@ request.post('/', async (c) => {
       data: responseData,
     };
 
-    const { filename } = saveSnapshot({ request: requestData, response: responseDataObj });
+    const { filename } = await saveSnapshot({ request: requestData, response: responseDataObj });
 
     // 💡 수정: 한글 파일명이 포함된 경우 HTTP Header 에러가 발생하므로 filename을 인코딩해서 전송
     c.header(

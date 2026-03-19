@@ -5,9 +5,9 @@ import { deleteSnapshot, getSnapshot } from '../utils/snapshot';
 
 const snapshots = new Hono();
 
-snapshots.get('/:filename', (c) => {
+snapshots.get('/:filename', async (c) => {
   const filename = c.req.param('filename');
-  const snapshot = getSnapshot(filename);
+  const snapshot = await getSnapshot(filename);
 
   if (!snapshot) {
     return c.html(<div class="p-4 text-red-500">파일을 찾을 수 없습니다.</div>);
@@ -66,9 +66,9 @@ snapshots.get('/:filename', (c) => {
   );
 });
 
-snapshots.delete('/:filename', (c) => {
+snapshots.delete('/:filename', async (c) => {
   const filename = c.req.param('filename');
-  const success = deleteSnapshot(filename);
+  const success = await deleteSnapshot(filename);
 
   if (success) {
     c.header('HX-Trigger', 'snapshotUpdated');

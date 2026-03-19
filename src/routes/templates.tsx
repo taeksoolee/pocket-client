@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path'; // 💡 basename 임포트 필수
+import { existsSync } from 'node:fs';
+import { readFile, unlink, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
 
 import { Hono } from 'hono';
 
@@ -17,7 +18,7 @@ const getSafeFilePath = (rawName: string) => {
 };
 
 // 1. 특정 템플릿(JSON) 불러오기
-templates.get('/:name', (c) => {
+templates.get('/:name', async (c) => {
   const filePath = getSafeFilePath(c.req.param('name'));
 
   if (!existsSync(filePath)) {
@@ -25,9 +26,9 @@ templates.get('/:name', (c) => {
   }
 
   try {
-    const fileData = readFileSync(filePath, 'utf-8');
+    const fileData = await readFile(filePath, 'utf-8');
     return c.json(JSON.parse(fileData));
-  } catch (err) {
+  } catch {
     return c.json({ error: 'Invalid JSON format' }, 500);
   }
 });
@@ -43,22 +44,22 @@ templates.post('/:name', async (c) => {
     }
 
     // 💡 나중에 에디터나 CLI에서 보기 좋도록 2칸 들여쓰기로 예쁘게 저장 (Pretty Print)
-    writeFileSync(filePath, JSON.stringify(body, null, 2), 'utf-8');
+    await writeFile(filePath, JSON.stringify(body, null, 2), 'utf-8');
 
     // HTMX 요청일 경우를 대비해 헤더는 남겨둡니다.
     c.header('HX-Trigger', JSON.stringify({ 'templates-updated': true }));
     return c.json({ success: true, message: 'Template saved successfully' });
-  } catch (err) {
+  } catch {
     return c.json({ error: 'Failed to save template' }, 500);
   }
 });
 
 // 3. 템플릿 삭제하기
-templates.delete('/:name', (c) => {
+templates.delete('/:name', async (c) => {
   const filePath = getSafeFilePath(c.req.param('name'));
 
   if (existsSync(filePath)) {
-    unlinkSync(filePath);
+    await unlink(filePath);
     // 💡 삭제는 Sidebar의 hx-delete로 쏘기 때문에 이 트리거가 즉시 작동하여 사이드바가 갱신됩니다.
     c.header('HX-Trigger', JSON.stringify({ 'templates-updated': true }));
   }
