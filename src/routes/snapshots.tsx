@@ -32,6 +32,10 @@ snapshots.get('/:filename', (c) => {
     };
   }
 
+  if (!requestData || !responseData) {
+    return c.html(<div class="p-4 text-red-500">스냅샷 데이터가 손상되었습니다.</div>);
+  }
+
   // 타임스탬프 포맷팅
   let formattedTimestamp = '';
   if (snapshot.timestamp) {
