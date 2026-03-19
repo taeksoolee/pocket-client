@@ -318,8 +318,11 @@ export const RequestForm = ({
         return this.allSuggestions.filter(item => item.toLowerCase().includes(item.startsWith('/') ? s : s.replace(/^\\/+/, '')) && item !== this.url).slice(0, 10);
       },
       get resolvedUrl() {
-        if (this.url.startsWith('http')) return this.url;
-        return this.baseUrl.replace(/\\/+$/, '') + '/' + this.url.replace(/^\\/+/, '');
+        if (this.url.startsWith('http://') || this.url.startsWith('https://')) return this.url;
+        if (this.url.startsWith('/') && this.baseUrl) {
+          return this.baseUrl.replace(/\\/+$/, '') + '/' + this.url.replace(/^\\/+/, '');
+        }
+        return this.url;
       },
       addRow(type) { this[type].push({ key: '', value: '', active: true }) },
       removeRow(type, index) { this[type].splice(index, 1) }
