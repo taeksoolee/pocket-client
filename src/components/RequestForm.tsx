@@ -67,7 +67,9 @@ export const RequestForm = ({
             } catch (runtimeError) {
               console.error(\`❌ [\${fileName}.js] Error:\`, runtimeError.message);
             }
-          } catch (e) {}
+          } catch (e) {
+            window.showToast('함수 로딩 실패 [' + fileName + ']: ' + (e instanceof Error ? e.message : String(e)));
+          }
         });
       },
 
@@ -99,7 +101,7 @@ export const RequestForm = ({
           this.params = (parsed.params && parsed.params.length > 0) 
             ? parsed.params : [{ key: '', value: '', active: true }];
         } catch (e) {
-          // 문법 오류 무시
+          console.warn('[PocketClient] Raw JSON 파싱 실패:', e instanceof Error ? e.message : e);
         }
       },
 
@@ -127,7 +129,7 @@ export const RequestForm = ({
             }, 100);
           }
         } catch(e) {
-          alert('저장 실패!');
+          window.showToast('템플릿 저장 실패: ' + (e instanceof Error ? e.message : String(e)));
         }
       },
 
@@ -140,7 +142,9 @@ export const RequestForm = ({
             const urlObj = new URL(finalUrl.startsWith('http') ? finalUrl : 'http://local' + (finalUrl.startsWith('/') ? finalUrl : '/' + finalUrl));
             activeParams.forEach(p => urlObj.searchParams.append(p.key.trim(), p.value));
             finalUrl = finalUrl.startsWith('http') ? urlObj.toString() : urlObj.pathname + urlObj.search;
-          } catch(e) {}
+          } catch(e) {
+            console.warn('[PocketClient] URL 파라미터 파싱 실패:', e instanceof Error ? e.message : e);
+          }
         }
 
         let lines = [];
@@ -167,7 +171,7 @@ export const RequestForm = ({
         if (this.method !== 'GET' && this.bodyType === 'json' && this.bodyContent) {
           lines[lines.length - 1] += ',';
           let bodyStr = this.bodyContent;
-          try { bodyStr = JSON.stringify(JSON.parse(this.bodyContent), null, 2); } catch(e){}
+          try { bodyStr = JSON.stringify(JSON.parse(this.bodyContent), null, 2); } catch(e){ console.warn('[PocketClient] body JSON 포맷 실패, 원본 사용'); }
           let formattedBody = bodyStr.split('\\n').join('\\n    ');
           lines.push('  body: JSON.stringify(' + formattedBody + ')');
         }

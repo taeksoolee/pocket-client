@@ -32,8 +32,9 @@ export const SidebarList = ({
               x-on:click={`
                 activeFile = '${item}';
                 fetch('/templates/${item}')
-                  .then(res => res.json())
+                  .then(res => { if (!res.ok) throw new Error(res.statusText); return res.json(); })
                   .then(data => $dispatch('fill-template-form', data))
+                  .catch(e => window.showToast('템플릿 로드 실패: ' + e.message))
               `}
               x-bind:class={`activeFile === '${item}' ? 'text-indigo-300 font-bold' : 'text-slate-300 hover:text-indigo-300'`}
               class="flex-1 text-left px-3 py-2 text-[11px] font-mono truncate outline-none"

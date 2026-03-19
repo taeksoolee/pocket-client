@@ -1,6 +1,7 @@
 import type { Child } from 'hono/jsx';
 
 import { ALPINE_LIB, HTMX_LIB, TAILWIND_CSS } from '../config';
+import { Toast } from './Toast';
 
 export const Layout = ({ children }: { children: Child }) => (
   <html lang="ko">
@@ -9,6 +10,7 @@ export const Layout = ({ children }: { children: Child }) => (
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>PocketClient Workspace</title>
       <script dangerouslySetInnerHTML={{ __html: HTMX_LIB }}></script>
+      <script>{`window.showToast = function(msg, type) { window.dispatchEvent(new CustomEvent('show-toast', { detail: { id: Date.now(), message: msg, type: type || 'error' } })); };`}</script>
       <script defer dangerouslySetInnerHTML={{ __html: ALPINE_LIB }}></script>
       <style dangerouslySetInnerHTML={{ __html: TAILWIND_CSS }}></style>
       <style>{`
@@ -31,6 +33,7 @@ export const Layout = ({ children }: { children: Child }) => (
       /* 💡 드래그 중에는 body 전체에 select-none을 걸 수 있도록 클래스 바인딩 (선택사항) */
     >
       {children}
+      <Toast />
     </body>
   </html>
 );
