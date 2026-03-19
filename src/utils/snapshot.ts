@@ -17,10 +17,22 @@ export interface SnapshotResponse {
   data: unknown;
 }
 
+interface LegacySnapshotMeta {
+  method?: string;
+  url?: string;
+  status?: number;
+  duration?: number;
+  headers?: Record<string, string>;
+}
+
 export interface Snapshot {
   timestamp: string;
-  request: SnapshotRequest;
-  response: SnapshotResponse;
+  request?: SnapshotRequest;
+  response?: SnapshotResponse;
+  /** @deprecated 구 포맷 호환용 */
+  meta?: LegacySnapshotMeta;
+  /** @deprecated 구 포맷 호환용 */
+  data?: unknown;
 }
 
 export interface SnapshotParams {
