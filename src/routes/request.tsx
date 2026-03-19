@@ -4,6 +4,7 @@ import { ErrorCard } from '../components/partials/ErrorCard';
 import { SuccessCard } from '../components/partials/SuccessCard';
 import { config } from '../config';
 import type { RequestPayload, RequestRow } from '../types';
+import { isValidRequestFormBody } from '../types';
 import { saveSnapshot } from '../utils/snapshot';
 
 const request = new Hono();
@@ -16,15 +17,35 @@ request.post('/', async (c) => {
 
   try {
     const body = await c.req.parseBody();
-    let rawUrl = body.url as string;
-    const method = body.method as string;
-    const payloadStr = body.pocket_payload as string;
+
+    if (!isValidRequestFormBody(body)) {
+      return c.html(<ErrorCard message="url과 method는 필수입니다." />, 400);
+    }
+
+    let rawUrl = body.url.trim();
+    const method = body.method.trim().toUpperCase();
+    const payloadStr = body.pocket_payload;
+
+    // 💡 상대 경로인데 baseUrl이 없는 경우 명확한 에러 반환
+    if (rawUrl.startsWith('/') && !config.baseUrl) {
+      return c.html(
+        <ErrorCard message="baseUrl이 설정되지 않아 상대 경로를 사용할 수 없습니다. config/default.json에 baseUrl을 설정해주세요." />,
+        400,
+      );
+    }
 
     // 💡 URL 결합: '/'로 시작하면 baseUrl 자동 병합
     if (rawUrl.startsWith('/') && config.baseUrl) {
       const base = config.baseUrl.replace(/\/+$/, '');
       const path = rawUrl.replace(/^\/+/, '');
       rawUrl = `${base}/${path}`;
+    }
+
+    // 💡 URL 형식 유효성 검증
+    try {
+      new URL(rawUrl);
+    } catch {
+      return c.html(<ErrorCard message={`올바르지 않은 URL 형식입니다: ${rawUrl}`} />, 400);
     }
 
     const payload: RequestPayload = payloadStr
