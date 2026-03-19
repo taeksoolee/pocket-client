@@ -1,8 +1,8 @@
+import { requestFormState } from '../alpine/requestFormState';
 import { config } from '../config';
 import type { RequestRow } from '../types';
-import { requestFormState } from '../alpine/requestFormState';
-import { FormTabs } from './request-form/FormTabs';
 import { CodeModal } from './request-form/CodeModal';
+import { FormTabs } from './request-form/FormTabs';
 
 export const RequestForm = ({
   initialHeaders,
@@ -24,7 +24,9 @@ export const RequestForm = ({
             <span class="font-mono lowercase text-indigo-400">{config.baseUrl}</span>
           </div>
         ) : (
-          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">New Request</div>
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            New Request
+          </div>
         )}
       </div>
 
@@ -52,8 +54,9 @@ export const RequestForm = ({
       <form
         hx-post="/request"
         hx-target="#snapshort"
-        hx-disabled-elt="button"
+        hx-disabled-elt="button[type='submit']"
         class="space-y-4"
+        x-ref="requestForm"
         x-bind="formControl"
       >
         <div class="flex gap-4">
@@ -76,7 +79,9 @@ export const RequestForm = ({
               required
               autocomplete="off"
               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm"
-              placeholder={config.baseUrl ? '/api/v1 (baseUrl 자동결합)' : 'https://api.example.com'}
+              placeholder={
+                config.baseUrl ? '/api/v1 (baseUrl 자동결합)' : 'https://api.example.com'
+              }
             />
             <div
               x-ref="suggestionBox"
@@ -92,7 +97,12 @@ export const RequestForm = ({
                   x-bind:class="selectedIndex === index ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'"
                   class="px-4 py-2 cursor-pointer font-mono text-xs border-b border-slate-50 last:border-0 transition-colors"
                 >
-                  <span x-bind:class="selectedIndex === index ? 'text-indigo-600' : 'text-indigo-400'" class="font-bold">↳</span>{' '}
+                  <span
+                    x-bind:class="selectedIndex === index ? 'text-indigo-600' : 'text-indigo-400'"
+                    class="font-bold"
+                  >
+                    ↳
+                  </span>{' '}
                   <span x-text="s"></span>
                 </div>
               </template>
@@ -101,9 +111,23 @@ export const RequestForm = ({
 
           <button
             type="submit"
+            x-show="!isLoading"
             class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition active:scale-95 text-sm shadow-md"
           >
             Send
+          </button>
+          <button
+            type="button"
+            x-show="isLoading"
+            x-on:click="cancelRequest()"
+            class="px-6 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition active:scale-95 text-sm shadow-md flex items-center gap-2"
+            style="display: none;"
+          >
+            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"></path>
+            </svg>
+            Cancel
           </button>
         </div>
 
@@ -112,7 +136,9 @@ export const RequestForm = ({
           x-show="url.trim().length > 0"
           style="display: none; margin-left: 120px;"
         >
-          <span class="flex-shrink-0 text-indigo-500 font-black uppercase tracking-tighter">Target:</span>
+          <span class="flex-shrink-0 text-indigo-500 font-black uppercase tracking-tighter">
+            Target:
+          </span>
           <span class="truncate text-slate-500" x-text="resolvedUrl"></span>
         </div>
 

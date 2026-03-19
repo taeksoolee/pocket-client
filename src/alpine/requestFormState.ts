@@ -1,5 +1,5 @@
-import type { RequestRow } from '../types';
 import type { PocketConfig } from '../config';
+import type { RequestRow } from '../types';
 
 export function requestFormState(
   config: PocketConfig,
@@ -26,6 +26,8 @@ export function requestFormState(
       showCodeModal: false,
       generatedCode: '',
       isCopied: false,
+
+      isLoading: false,
 
       runCustomFunctions() {
         window.PocketActions = {};
@@ -168,6 +170,11 @@ export function requestFormState(
         });
       },
 
+      cancelRequest() {
+        htmx.trigger(this.$refs.requestForm, 'htmx:abort');
+        this.isLoading = false;
+      },
+
       get formControl() {
         return {
           ['x-init']() {
@@ -184,6 +191,8 @@ export function requestFormState(
             this.$watch('headers', () => this.updateRawJson(), { deep: true });
             this.$watch('bodyType', () => this.updateRawJson());
             this.$watch('bodyContent', () => this.updateRawJson());
+            this.$el.addEventListener('htmx:beforeRequest', () => { this.isLoading = true; });
+            this.$el.addEventListener('htmx:afterRequest', () => { this.isLoading = false; });
             this.runCustomFunctions();
             this.updateRawJson();
           },

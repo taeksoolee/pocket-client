@@ -83,11 +83,14 @@ request.post('/', async (c) => {
     const startTime = Date.now();
 
     // 💡 fetch는 인코딩된 finalUrl을 사용하여 전송
+    const clientSignal = c.req.raw.signal;
+    const combinedSignal = AbortSignal.any([controller.signal, clientSignal]);
+
     const response = await fetch(finalUrl, {
       method,
       headers: fetchHeaders,
       body: fetchBody,
-      signal: controller.signal,
+      signal: combinedSignal,
     });
 
     // 💡 요청 성공 시 타이머 해제
