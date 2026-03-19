@@ -3,7 +3,7 @@ import { readdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
-import { workspaceDir } from '../config';
+import { config, workspaceDir } from '../config';
 
 export interface SnapshotRequest {
   method: string;
@@ -64,7 +64,8 @@ export async function saveSnapshot(params: SnapshotParams) {
   const hh = timestamp.getHours().toString().padStart(2, '0');
   const mm = timestamp.getMinutes().toString().padStart(2, '0');
   const ss = timestamp.getSeconds().toString().padStart(2, '0');
-  const formattedDate = `${y}${m}${d}${hh}${mm}${ss}`;
+  const ms = timestamp.getMilliseconds().toString().padStart(3, '0');
+  const formattedDate = `${y}${m}${d}${hh}${mm}${ss}${ms}`;
 
   const decodedUrl = decodeURIComponent(params.request.url);
   const safeUrl = decodedUrl.replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 50);
@@ -78,8 +79,17 @@ export async function saveSnapshot(params: SnapshotParams) {
   };
 
   await writeFile(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
+  await pruneSnapshots(snapshortsDir, config.maxSnapshots ?? 200);
   invalidateSuggestionsCache();
   return { filename, filePath };
+}
+
+async function pruneSnapshots(dir: string, max: number): Promise<void> {
+  if (max === 0) return; // 0 = 무제한
+  const files = (await readdir(dir)).filter((f) => f.endsWith('.json')).sort();
+  if (files.length <= max) return;
+  const toDelete = files.slice(0, files.length - max);
+  await Promise.all(toDelete.map((f) => unlink(path.join(dir, f)).catch(() => {})));
 }
 
 // ─── 조회 ───────────────────────────────────────────────────────────────────

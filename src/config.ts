@@ -9,6 +9,7 @@ export interface PocketConfig {
   baseUrl?: string; // 기본 API 도메인
   commonEndpoints?: string[]; // 자주 쓰는 엔드포인트 수동 설정
   timeout?: number;
+  maxSnapshots?: number; // 0 = 무제한, 기본 200
   loadedEnv?: string;
 }
 
@@ -24,7 +25,8 @@ const INTERNAL_DEFAULT: PocketConfig = {
   port: 3000,
   globalHeaders: {},
   commonEndpoints: [],
-  timeout: 10000, // 💡 기본 타임아웃 10초 추가
+  timeout: 10000,
+  maxSnapshots: 200,
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -37,6 +39,7 @@ function validateConfig(raw: unknown, base: PocketConfig): PocketConfig {
   if (typeof raw.port === 'number') result.port = raw.port;
   if (typeof raw.baseUrl === 'string') result.baseUrl = raw.baseUrl;
   if (typeof raw.timeout === 'number') result.timeout = raw.timeout;
+  if (typeof raw.maxSnapshots === 'number') result.maxSnapshots = raw.maxSnapshots;
   if (typeof raw.loadedEnv === 'string') result.loadedEnv = raw.loadedEnv;
   if (isRecord(raw.globalHeaders)) {
     result.globalHeaders = Object.fromEntries(
