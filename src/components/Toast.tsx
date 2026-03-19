@@ -2,7 +2,7 @@ export const Toast = () => (
   <div
     id="toast-container"
     x-data="{ toasts: [] }"
-    x-on:show-toast.window="toasts.push($event.detail); setTimeout(() => toasts.splice(0, 1), 3000)"
+    x-init="window.addEventListener('show-toast', (e) => { toasts.push(e.detail); setTimeout(() => toasts.splice(0, 1), 3000); })"
     class="fixed bottom-4 right-4 flex flex-col gap-2 z-[200] pointer-events-none"
     style="display: flex;"
   >
